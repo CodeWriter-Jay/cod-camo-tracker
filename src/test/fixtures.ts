@@ -33,5 +33,35 @@ export const weapon: Weapon = {
   nameZh: "汉86",
   category: "assault-rifle",
   image: null,
-  camos: { mp: [goldCamo], dmz: [levelCamo, countedCamo, goldCamo] },
+  camos: { mp: [levelCamo, countedCamo, goldCamo], dmz: [levelCamo, countedCamo, goldCamo] },
+};
+
+const camo = (id: string, group: Camo["group"]): Camo => ({
+  id,
+  name: id,
+  nameZh: null,
+  group,
+  image: null,
+  challenge: { en: id, zh: id, target: 1 },
+});
+
+/** 完整顺序的武器：军事 ×3 → 特殊 ×3 → 黄金 → 铂金 */
+const fullCamos = [
+  camo("military-1", "military"),
+  camo("military-2", "military"),
+  camo("military-3", "military"),
+  camo("smoke", "special"),
+  camo("stormwave", "special"),
+  camo("red", "special"),
+  camo("gold", "completionist"),
+  camo("platinum", "completionist"),
+];
+
+export const fullWeapon: Weapon = {
+  id: "m4",
+  name: "M4",
+  nameZh: "M4",
+  category: "assault-rifle",
+  image: null,
+  camos: { mp: fullCamos, dmz: fullCamos },
 };

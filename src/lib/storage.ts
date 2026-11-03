@@ -1,8 +1,10 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { load } from "@tauri-apps/plugin-store";
 import { z } from "zod";
+import { bundledCatalog } from "../data/catalog";
 import { catalogSchema, modeIdSchema, type Catalog } from "../data/schema";
-import { progressSchema } from "./progress";
+import { migrateFavorites } from "./favorites";
+import { completedSchema, migrateCountProgress } from "./progress";
 
 const STORE_FILE = "tracker.json";
 const STATE_KEY = "state";
@@ -23,7 +25,7 @@ const detectLanguage = (): Language => (navigator.language.startsWith("zh") ? "z
 
 // 旧版本缺少的字段均有默认值，旧数据可直接读取；未知字段（如 pinnedWeaponId）会被剥离
 const persistedStateSchema = z.object({
-  progress: progressSchema,
+  completed: completedSchema.default({}),
   favorites: z.array(z.string()).default([]),
   settings: z.object({
     mode: modeIdSchema.default("dmz"),
@@ -38,7 +40,7 @@ export type PersistedState = z.infer<typeof persistedStateSchema>;
 export type Settings = PersistedState["settings"];
 
 export const createDefaultState = (): PersistedState => ({
-  progress: {},
+  completed: {},
   favorites: [],
   settings: { mode: "dmz", language: detectLanguage(), shortcuts: DEFAULT_SHORTCUTS },
 });
@@ -69,7 +71,25 @@ export async function loadState(): Promise<PersistedState> {
   if (raw === null) return createDefaultState();
   const result = persistedStateSchema.safeParse(raw);
   if (!result.success) throw new Error(result.error.message);
-  return result.data;
+  return migrateLegacyState(raw, result.data);
+}
+
+// 0.2.0 及之前按模式记录计数（progress 字段）、收藏带模式前缀，读取时转换为完成状态
+const legacyProgressSchema = z.object({
+  progress: z.record(z.string(), z.number()),
+});
+
+function migrateLegacyState(raw: unknown, state: PersistedState): PersistedState {
+  const legacy = legacyProgressSchema.safeParse(raw);
+  if (!legacy.success) return state;
+  return {
+    ...state,
+    completed: {
+      ...migrateCountProgress(legacy.data.progress, bundledCatalog),
+      ...state.completed,
+    },
+    favorites: migrateFavorites(state.favorites),
+  };
 }
 
 export const saveState = (state: PersistedState) => writeValue(STATE_KEY, state);

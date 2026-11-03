@@ -403,50 +403,6 @@ h3 {
   color: var(--star);
 }
 
-.counter {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: auto;
-}
-
-.counter-value {
-  display: flex;
-  align-items: baseline;
-  padding: 2px 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.counter-value input {
-  width: 44px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  font-weight: 700;
-  text-align: right;
-  appearance: textfield;
-}
-
-.counter-value input::-webkit-inner-spin-button,
-.counter-value input::-webkit-outer-spin-button {
-  appearance: none;
-}
-
-.counter-value input:focus-visible {
-  outline: none;
-}
-
-.counter-value:focus-within {
-  border-color: var(--accent);
-}
-
-.counter-target {
-  color: var(--muted);
-  font-size: 12px;
-}
-
 .check {
   position: relative;
   display: grid;

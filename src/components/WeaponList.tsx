@@ -1,19 +1,18 @@
 import { useState } from "react";
-import { useCatalog, type ModeId } from "../data/catalog";
+import { useCatalog } from "../data/catalog";
 import { useI18n } from "../i18n/I18nContext";
-import { getWeaponCompletion, type Progress } from "../lib/progress";
+import { getWeaponCompletion, type Completed } from "../lib/progress";
 import { CamoImage } from "./CamoImage";
 import { ProgressBar } from "./ProgressBar";
 
 const ALL_CATEGORIES = "all";
 
 interface WeaponListProps {
-  mode: ModeId;
-  progress: Progress;
+  completed: Completed;
   onSelect: (weaponId: string) => void;
 }
 
-export function WeaponList({ mode, progress, onSelect }: WeaponListProps) {
+export function WeaponList({ completed, onSelect }: WeaponListProps) {
   const catalog = useCatalog();
   const { t, weaponName, categoryName } = useI18n();
   const [query, setQuery] = useState("");
@@ -58,7 +57,7 @@ export function WeaponList({ mode, progress, onSelect }: WeaponListProps) {
       ) : (
         <ul className="weapon-grid">
           {weapons.map((weapon) => {
-            const completion = getWeaponCompletion(progress, mode, weapon);
+            const completion = getWeaponCompletion(completed, weapon);
             return (
               <li key={weapon.id}>
                 <button type="button" className="weapon-card" onClick={() => onSelect(weapon.id)}>

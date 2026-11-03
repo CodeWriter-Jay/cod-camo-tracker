@@ -19,36 +19,66 @@ describe("App", () => {
     vi.unstubAllGlobals();
   });
 
-  it("should show chinese weapon name, translated challenge and increment progress", async () => {
+  it("should show chinese weapon name, translated challenge and mark camo done", async () => {
     const user = await openWeapon("Han 86", /汉86/);
 
     expect(screen.getByRole("heading", { name: "汉86" })).toBeInTheDocument();
     expect(screen.getByText("架枪击杀 75 名敌人")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Smoke 增加 1" }));
-    expect(screen.getByLabelText("Smoke 当前进度")).toHaveValue(1);
+    await user.click(screen.getByLabelText("Smoke 已完成"));
+    expect(screen.getByLabelText("Smoke 已完成")).toBeChecked();
   });
 
-  it("should move favorite to next camo after completing it", async () => {
+  it("should share completion between modes", async () => {
+    const user = await openWeapon("汉86", /汉86/);
+    await user.click(screen.getByLabelText("Smoke 已完成"));
+    await user.click(screen.getByRole("tab", { name: "多人游戏" }));
+
+    expect(screen.getByText("架枪击杀 20 名玩家")).toBeInTheDocument();
+    expect(screen.getByLabelText("Smoke 已完成")).toBeChecked();
+  });
+
+  it("should switch favorite requirement with mode and move to next camo when done", async () => {
     const user = await openWeapon("汉86", /汉86/);
     await user.click(screen.getByRole("button", { name: "收藏 Smoke" }));
     await user.click(screen.getByRole("button", { name: /返回/ }));
 
-    const panel = favoritesPanel();
-    expect(within(panel).getByText("Smoke")).toBeInTheDocument();
-    await user.click(within(panel).getByRole("button", { name: "完成" }));
+    expect(within(favoritesPanel()).getByText("架枪击杀 75 名敌人")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "多人游戏" }));
+    expect(within(favoritesPanel()).getByText("架枪击杀 20 名玩家")).toBeInTheDocument();
 
+    await user.click(within(favoritesPanel()).getByLabelText("Smoke 已完成"));
     expect(within(favoritesPanel()).queryByText("Smoke")).not.toBeInTheDocument();
     expect(within(favoritesPanel()).getByText("Stormwave")).toBeInTheDocument();
   });
 
-  it("should keep progress and favorites after reload", async () => {
+  it("should keep completion and favorites after reload", async () => {
     const user = await openWeapon("Han 86", /汉86/);
-    await user.click(screen.getByRole("button", { name: "Smoke 增加 1" }));
+    await user.click(screen.getByLabelText("Stormwave 已完成"));
     await user.click(screen.getByRole("button", { name: "收藏 Smoke" }));
 
     render(<App />);
     const panels = await screen.findAllByRole("region", { name: "收藏的挑战" });
-    expect(within(panels[panels.length - 1]).getByLabelText("Smoke 当前进度")).toHaveValue(1);
+    expect(within(panels[panels.length - 1]).getByText("Smoke")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /汉86/ }).length).toBeGreaterThan(0);
+  });
+
+  it("should migrate counts and favorites saved by previous versions", async () => {
+    localStorage.setItem(
+      "cod-camo-tracker:state",
+      JSON.stringify({
+        progress: { "dmz:han-86:smoke": 75, "mp:han-86:stormwave": 3 },
+        favorites: ["dmz:han-86:stormwave"],
+        settings: { mode: "dmz", pinnedWeaponId: null },
+      }),
+    );
+    // 收藏面板里也有“汉86”链接，按带进度的武器卡片名定位
+    const user = await openWeapon("Han 86", /汉86\s*\d+\/\d+/);
+
+    expect(screen.getByLabelText("Smoke 已完成")).toBeChecked();
+    expect(screen.getByLabelText("Stormwave 已完成")).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "取消收藏 Stormwave" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /返回/ }));
+    expect(within(favoritesPanel()).getByText("Stormwave")).toBeInTheDocument();
   });
 
   it("should show empty state when no weapon matches", async () => {

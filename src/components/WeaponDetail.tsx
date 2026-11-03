@@ -1,6 +1,6 @@
-import type { Camo, CamoGroup, ModeId, Weapon } from "../data/catalog";
+import type { CamoGroup, ModeId, Weapon } from "../data/catalog";
 import { useI18n } from "../i18n/I18nContext";
-import { getCount, getWeaponCompletion, progressKey, type Progress } from "../lib/progress";
+import { camoKey, getWeaponCompletion, isDone, type Completed } from "../lib/progress";
 import { CamoImage } from "./CamoImage";
 import { CamoRow } from "./CamoRow";
 import { ProgressBar } from "./ProgressBar";
@@ -10,24 +10,24 @@ const GROUP_ORDER: CamoGroup[] = ["military", "special", "completionist"];
 interface WeaponDetailProps {
   weapon: Weapon;
   mode: ModeId;
-  progress: Progress;
+  completed: Completed;
   favorites: string[];
   onBack: () => void;
   onToggleFavorite: (key: string) => void;
-  onCountChange: (camo: Camo, count: number) => void;
+  onDoneChange: (camoId: string, done: boolean) => void;
 }
 
 export function WeaponDetail({
   weapon,
   mode,
-  progress,
+  completed,
   favorites,
   onBack,
   onToggleFavorite,
-  onCountChange,
+  onDoneChange,
 }: WeaponDetailProps) {
   const { t, weaponName } = useI18n();
-  const completion = getWeaponCompletion(progress, mode, weapon);
+  const completion = getWeaponCompletion(completed, weapon);
   const camos = weapon.camos[mode];
 
   return (
@@ -54,15 +54,15 @@ export function WeaponDetail({
             <h3 className="section-title">{t.groups[group]}</h3>
             <ul className="camo-list">
               {groupCamos.map((camo) => {
-                const key = progressKey(mode, weapon.id, camo.id);
+                const key = camoKey(weapon.id, camo.id);
                 return (
                   <CamoRow
                     key={camo.id}
                     camo={camo}
-                    count={getCount(progress, mode, weapon.id, camo)}
+                    isDone={isDone(completed, key)}
                     isFavorite={favorites.includes(key)}
                     onToggleFavorite={() => onToggleFavorite(key)}
-                    onCountChange={(count) => onCountChange(camo, count)}
+                    onDoneChange={(done) => onDoneChange(camo.id, done)}
                   />
                 );
               })}

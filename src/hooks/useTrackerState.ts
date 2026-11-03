@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Camo, ModeId, Trackable, Weapon } from "../data/catalog";
-import { applyCountChange, toggleFavorite } from "../lib/favorites";
-import { ACCOUNT_OWNER_ID, setCount } from "../lib/progress";
+import type { ModeId, Weapon } from "../data/catalog";
+import { applyCompletionChange, toggleFavorite } from "../lib/favorites";
+import { masteryKey, setDone } from "../lib/progress";
 import {
   createDefaultState,
   loadState,
@@ -52,20 +52,20 @@ export function useTrackerState() {
       .catch((error: unknown) => setSaveError(toMessage(error)));
   }, [data]);
 
-  const changeCamoCount = useCallback(
-    (mode: ModeId, weapon: Weapon, camo: Camo, count: number) =>
+  const setCamoDone = useCallback(
+    (weapon: Weapon, camoId: string, done: boolean) =>
       update((current) => ({
         ...current,
-        ...applyCountChange(current, mode, weapon, camo, count),
+        ...applyCompletionChange(current, weapon, camoId, done),
       })),
     [update],
   );
 
-  const changeMasteryCount = useCallback(
-    (mode: ModeId, camo: Trackable, count: number) =>
+  const setMasteryDone = useCallback(
+    (mode: ModeId, camoId: string, done: boolean) =>
       update((current) => ({
         ...current,
-        progress: setCount(current.progress, mode, ACCOUNT_OWNER_ID, camo, count),
+        completed: setDone(current.completed, masteryKey(mode, camoId), done),
       })),
     [update],
   );
@@ -90,8 +90,8 @@ export function useTrackerState() {
   return {
     loadStatus,
     saveError,
-    changeCamoCount,
-    changeMasteryCount,
+    setCamoDone,
+    setMasteryDone,
     toggleFavoriteKey,
     updateSettings,
     resetState,

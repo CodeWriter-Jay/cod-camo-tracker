@@ -1,26 +1,21 @@
-import { useCatalog, type ModeId, type Trackable } from "../data/catalog";
+import { useCatalog, type ModeId } from "../data/catalog";
 import { useI18n } from "../i18n/I18nContext";
-import {
-  ACCOUNT_OWNER_ID,
-  getCount,
-  getDivergenceCompletion,
-  type Progress,
-} from "../lib/progress";
+import { getDivergenceCompletion, isDone, masteryKey, type Completed } from "../lib/progress";
 import { CamoImage } from "./CamoImage";
 import { CamoRow } from "./CamoRow";
 import { ProgressBar } from "./ProgressBar";
 
 interface MasteryPanelProps {
   mode: ModeId;
-  progress: Progress;
-  onCountChange: (camo: Trackable, count: number) => void;
+  completed: Completed;
+  onDoneChange: (camoId: string, done: boolean) => void;
 }
 
-export function MasteryPanel({ mode, progress, onCountChange }: MasteryPanelProps) {
+export function MasteryPanel({ mode, completed, onDoneChange }: MasteryPanelProps) {
   const catalog = useCatalog();
   const { t, camoName } = useI18n();
   const { divergence } = catalog;
-  const divergenceCompletion = getDivergenceCompletion(progress, mode, catalog);
+  const divergenceCompletion = getDivergenceCompletion(completed, catalog);
   const requiredCamo = catalog.weapons
     .flatMap((weapon) => weapon.camos[mode])
     .find((camo) => camo.id === divergence.requiredCamoId);
@@ -47,8 +42,8 @@ export function MasteryPanel({ mode, progress, onCountChange }: MasteryPanelProp
           <CamoRow
             key={camo.id}
             camo={camo}
-            count={getCount(progress, mode, ACCOUNT_OWNER_ID, camo)}
-            onCountChange={(count) => onCountChange(camo, count)}
+            isDone={isDone(completed, masteryKey(mode, camo.id))}
+            onDoneChange={(done) => onDoneChange(camo.id, done)}
           />
         ))}
       </ul>

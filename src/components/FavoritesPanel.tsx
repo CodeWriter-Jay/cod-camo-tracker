@@ -1,27 +1,30 @@
-import { useCatalog, type Camo, type ModeId, type Weapon } from "../data/catalog";
+import { useCatalog, type ModeId, type Weapon } from "../data/catalog";
 import { useI18n } from "../i18n/I18nContext";
 import { resolveFavorites } from "../lib/favorites";
-import { getCount, type Progress } from "../lib/progress";
+import { isDone, type Completed } from "../lib/progress";
 import { CamoRow } from "./CamoRow";
 
 interface FavoritesPanelProps {
+  /** 当前模式，决定显示哪种模式的挑战要求 */
+  mode: ModeId;
   favorites: string[];
-  progress: Progress;
-  onCountChange: (mode: ModeId, weapon: Weapon, camo: Camo, count: number) => void;
+  completed: Completed;
+  onDoneChange: (weapon: Weapon, camoId: string, done: boolean) => void;
   onToggleFavorite: (key: string) => void;
   onOpenWeapon: (weaponId: string) => void;
 }
 
 export function FavoritesPanel({
+  mode,
   favorites,
-  progress,
-  onCountChange,
+  completed,
+  onDoneChange,
   onToggleFavorite,
   onOpenWeapon,
 }: FavoritesPanelProps) {
   const catalog = useCatalog();
   const { t, weaponName } = useI18n();
-  const items = resolveFavorites(catalog, favorites);
+  const items = resolveFavorites(catalog, favorites, mode);
 
   return (
     <section className="panel" aria-label={t.favoritesTitle}>
@@ -33,22 +36,19 @@ export function FavoritesPanel({
         <p className="empty">{t.favoritesEmpty}</p>
       ) : (
         <ul className="camo-list">
-          {items.map(({ key, mode, weapon, camo }) => (
+          {items.map(({ key, weapon, camo }) => (
             <CamoRow
               key={key}
               camo={camo}
-              count={getCount(progress, mode, weapon.id, camo)}
+              isDone={isDone(completed, key)}
               eyebrow={
-                <>
-                  <button type="button" className="link" onClick={() => onOpenWeapon(weapon.id)}>
-                    {weaponName(weapon)}
-                  </button>
-                  <span className="tag">{t.modes[mode]}</span>
-                </>
+                <button type="button" className="link" onClick={() => onOpenWeapon(weapon.id)}>
+                  {weaponName(weapon)}
+                </button>
               }
               isFavorite
               onToggleFavorite={() => onToggleFavorite(key)}
-              onCountChange={(count) => onCountChange(mode, weapon, camo, count)}
+              onDoneChange={(done) => onDoneChange(weapon, camo.id, done)}
             />
           ))}
         </ul>

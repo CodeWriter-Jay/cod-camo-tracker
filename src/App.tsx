@@ -82,12 +82,12 @@ function TrackerView({ data, tracker, catalogData, appUpdate, overlay }: Tracker
   const { t } = useI18n();
   const [view, setView] = useState<View>({ name: "home" });
   const { catalog } = catalogData;
-  const { progress, favorites, settings } = data;
+  const { completed, favorites, settings } = data;
   const { mode, shortcuts } = settings;
 
   const selectedWeapon =
     view.name === "weapon" ? catalog.weapons.find((weapon) => weapon.id === view.weaponId) : null;
-  const overall = getOverallCompletion(progress, mode, catalog.weapons);
+  const overall = getOverallCompletion(completed, catalog.weapons);
   const overallPercent =
     overall.total === 0 ? 0 : Math.round((overall.completed / overall.total) * 100);
   const errorMessage = overlay.overlayError
@@ -98,9 +98,10 @@ function TrackerView({ data, tracker, catalogData, appUpdate, overlay }: Tracker
 
   const favoritesPanel = (
     <FavoritesPanel
+      mode={mode}
       favorites={favorites}
-      progress={progress}
-      onCountChange={tracker.changeCamoCount}
+      completed={completed}
+      onDoneChange={tracker.setCamoDone}
       onToggleFavorite={tracker.toggleFavoriteKey}
       onOpenWeapon={openWeapon}
     />
@@ -213,22 +214,20 @@ function TrackerView({ data, tracker, catalogData, appUpdate, overlay }: Tracker
               key={selectedWeapon.id}
               weapon={selectedWeapon}
               mode={mode}
-              progress={progress}
+              completed={completed}
               favorites={favorites}
               onBack={goHome}
               onToggleFavorite={tracker.toggleFavoriteKey}
-              onCountChange={(camo, count) =>
-                tracker.changeCamoCount(mode, selectedWeapon, camo, count)
-              }
+              onDoneChange={(camoId, done) => tracker.setCamoDone(selectedWeapon, camoId, done)}
             />
           ) : (
             <>
               {favoritesPanel}
-              <WeaponList mode={mode} progress={progress} onSelect={openWeapon} />
+              <WeaponList completed={completed} onSelect={openWeapon} />
               <MasteryPanel
                 mode={mode}
-                progress={progress}
-                onCountChange={(camo, count) => tracker.changeMasteryCount(mode, camo, count)}
+                completed={completed}
+                onDoneChange={(camoId, done) => tracker.setMasteryDone(mode, camoId, done)}
               />
             </>
           )}

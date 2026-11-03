@@ -1,67 +1,46 @@
 import { z } from "zod";
-import type { Catalog, ModeId, Trackable, Weapon } from "../data/catalog";
+import type { Camo, Catalog, ModeId, Weapon } from "../data/catalog";
 
-/** 键为 `${mode}:${ownerId}:${camoId}`，值为已完成次数 */
-export const progressSchema = z.record(z.string(), z.number().int().nonnegative());
-export type Progress = z.infer<typeof progressSchema>;
+/**
+ * 已完成的挑战集合。武器迷彩在多人游戏与 DMZ 中任一模式完成即解锁，键为 `${weaponId}:${camoId}`；
+ * 精通迷彩按模式分开，键为 `mastery:${mode}:${camoId}`
+ */
+export const completedSchema = z.record(z.string(), z.literal(true));
+export type Completed = z.infer<typeof completedSchema>;
 
 export interface Completion {
   completed: number;
   total: number;
 }
 
-/** 精通迷彩属于账号而非某把武器，用固定 id 作为归属 */
-export const ACCOUNT_OWNER_ID = "account";
+export const camoKey = (weaponId: string, camoId: string) => `${weaponId}:${camoId}`;
+export const masteryKey = (mode: ModeId, camoId: string) => `mastery:${mode}:${camoId}`;
 
-export const progressKey = (mode: ModeId, ownerId: string, camoId: string) =>
-  `${mode}:${ownerId}:${camoId}`;
+export const isDone = (completed: Completed, key: string) => completed[key] === true;
 
-export const getTarget = (camo: Trackable) => camo.challenge.target;
-
-export const getCount = (progress: Progress, mode: ModeId, ownerId: string, camo: Trackable) =>
-  progress[progressKey(mode, ownerId, camo.id)] ?? 0;
-
-export const isCamoComplete = (
-  progress: Progress,
-  mode: ModeId,
-  ownerId: string,
-  camo: Trackable,
-) => getCount(progress, mode, ownerId, camo) >= getTarget(camo);
-
-export function setCount(
-  progress: Progress,
-  mode: ModeId,
-  ownerId: string,
-  camo: Trackable,
-  count: number,
-): Progress {
-  const key = progressKey(mode, ownerId, camo.id);
-  const clamped = Math.min(Math.max(Math.trunc(count), 0), getTarget(camo));
-  if (clamped === 0) {
-    const next = { ...progress };
-    delete next[key];
-    return next;
-  }
-  return { ...progress, [key]: clamped };
+export function setDone(completed: Completed, key: string, done: boolean): Completed {
+  if (done) return { ...completed, [key]: true };
+  const next = { ...completed };
+  delete next[key];
+  return next;
 }
 
-export function getWeaponCompletion(progress: Progress, mode: ModeId, weapon: Weapon): Completion {
-  const camos = weapon.camos[mode];
+/** 两种模式的迷彩列表顺序与 id 一致，仅挑战要求不同；与模式无关的计算统一用多人游戏列表 */
+const camosOf = (weapon: Weapon) => weapon.camos.mp;
+
+export function getWeaponCompletion(completed: Completed, weapon: Weapon): Completion {
+  const camos = camosOf(weapon);
   return {
-    completed: camos.filter((camo) => isCamoComplete(progress, mode, weapon.id, camo)).length,
+    completed: camos.filter((camo) => isDone(completed, camoKey(weapon.id, camo.id))).length,
     total: camos.length,
   };
 }
 
-export function getOverallCompletion(
-  progress: Progress,
-  mode: ModeId,
-  weapons: Weapon[],
-): Completion {
+export function getOverallCompletion(completed: Completed, weapons: Weapon[]): Completion {
   return weapons.reduce<Completion>(
     (sum, weapon) => {
-      const { completed, total } = getWeaponCompletion(progress, mode, weapon);
-      return { completed: sum.completed + completed, total: sum.total + total };
+      const { completed: done, total } = getWeaponCompletion(completed, weapon);
+      return { completed: sum.completed + done, total: sum.total + total };
     },
     { completed: 0, total: 0 },
   );
@@ -72,27 +51,64 @@ export function getOverallCompletion(
  * 不传 afterCamoId 时即第一个未完成的迷彩
  */
 export function getNextCamo(
-  progress: Progress,
-  mode: ModeId,
+  completed: Completed,
   weapon: Weapon,
   afterCamoId?: string,
-) {
-  const camos = weapon.camos[mode];
+): Camo | null {
+  const camos = camosOf(weapon);
   const start = camos.findIndex((camo) => camo.id === afterCamoId) + 1;
   const ordered = [...camos.slice(start), ...camos.slice(0, start)];
-  return ordered.find((camo) => !isCamoComplete(progress, mode, weapon.id, camo)) ?? null;
+  return ordered.find((camo) => !isDone(completed, camoKey(weapon.id, camo.id))) ?? null;
+}
+
+/**
+ * 勾选某迷彩时一并视为完成的前置迷彩（仅限同一把武器）：
+ * 军事迷彩依赖之前的军事迷彩；特殊迷彩互相独立、也不依赖军事迷彩；完成者迷彩依赖之前的全部迷彩
+ */
+export function getPrerequisites(weapon: Weapon, camoId: string): Camo[] {
+  const camos = camosOf(weapon);
+  const index = camos.findIndex((camo) => camo.id === camoId);
+  if (index === -1) return [];
+  const before = camos.slice(0, index);
+  switch (camos[index].group) {
+    case "military":
+      return before.filter((camo) => camo.group === "military");
+    case "special":
+      return [];
+    case "completionist":
+      return before;
+  }
 }
 
 /** Divergence 需要若干把武器完成指定迷彩，由各武器进度推导，不单独存储 */
-export function getDivergenceCompletion(
-  progress: Progress,
-  mode: ModeId,
-  catalog: Catalog,
-): Completion {
+export function getDivergenceCompletion(completed: Completed, catalog: Catalog): Completion {
   const { requiredCamoId, required } = catalog.divergence;
-  const completed = catalog.weapons.filter((weapon) => {
-    const camo = weapon.camos[mode].find((item) => item.id === requiredCamoId);
-    return camo !== undefined && isCamoComplete(progress, mode, weapon.id, camo);
-  }).length;
-  return { completed: Math.min(completed, required), total: required };
+  const done = catalog.weapons.filter(
+    (weapon) =>
+      camosOf(weapon).some((camo) => camo.id === requiredCamoId) &&
+      isDone(completed, camoKey(weapon.id, requiredCamoId)),
+  ).length;
+  return { completed: Math.min(done, required), total: required };
+}
+
+/**
+ * 迁移 0.2.0 及之前按模式计数的进度（键为 `${mode}:${ownerId}:${camoId}`）：
+ * 武器迷彩在任一模式达到要求即视为完成；精通迷彩（ownerId 为 account）保留各自模式
+ */
+export function migrateCountProgress(legacy: Record<string, number>, catalog: Catalog): Completed {
+  const migrated: Completed = {};
+  for (const [key, count] of Object.entries(legacy)) {
+    const [mode, ownerId, camoId] = key.split(":");
+    if (mode !== "mp" && mode !== "dmz") continue;
+    if (ownerId === "account") {
+      const camo = catalog.mastery[mode].find((item) => item.id === camoId);
+      if (camo && count >= camo.challenge.target) migrated[masteryKey(mode, camoId)] = true;
+      continue;
+    }
+    const camo = catalog.weapons
+      .find((weapon) => weapon.id === ownerId)
+      ?.camos[mode].find((item) => item.id === camoId);
+    if (camo && count >= camo.challenge.target) migrated[camoKey(ownerId, camoId)] = true;
+  }
+  return migrated;
 }
