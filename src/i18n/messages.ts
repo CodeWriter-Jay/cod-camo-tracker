@@ -8,6 +8,8 @@ const zh = {
   loadFailed: (detail: string) => `读取本地进度失败：${detail}`,
   resetData: "清空进度并重新开始",
   saveFailed: (detail: string) => `保存进度失败：${detail}`,
+  windowStateFailed: (detail: string) => `保存窗口大小与位置失败：${detail}`,
+  resizeWindow: "拖动调整窗口大小",
   hideOverlay: "隐藏",
   hideOverlayHint: (shortcut: string) => `隐藏浮层（${shortcut} 呼出）`,
   openSettings: "设置",
@@ -42,6 +44,9 @@ const zh = {
   settings: {
     title: "设置",
     language: "界面语言",
+    appearance: "浮层外观",
+    opacity: "背景不透明度",
+    resizeHint: "拖动浮层右下角调整窗口大小，大小与位置会自动记住",
     languages: { zh: "简体中文", en: "English" },
     shortcuts: "快捷键",
     toggleOverlay: "显示/隐藏浮层",
@@ -75,6 +80,7 @@ const zh = {
     exportScriptHint:
       "在浏览器打开任一 assets.codmunity.gg 图片页，按 F12 打开控制台粘贴运行，会下载一个 .json 文件，再用「导入图片」选择它",
     exportScriptCopied: "已复制到剪贴板",
+    exportScriptNothingMissing: "当前所有图片都已离线保存，无需导出；在线更新出现新武器后可用",
     exportScriptFailed: (detail: string) => `复制失败：${detail}`,
     app: "客户端",
     version: (version: string) => `当前版本 v${version}`,
@@ -102,6 +108,8 @@ const en: Messages = {
   loadFailed: (detail) => `Couldn't read saved progress: ${detail}`,
   resetData: "Clear progress and start over",
   saveFailed: (detail) => `Couldn't save progress: ${detail}`,
+  windowStateFailed: (detail) => `Couldn't save window size and position: ${detail}`,
+  resizeWindow: "Drag to resize",
   hideOverlay: "Hide",
   hideOverlayHint: (shortcut) => `Hide overlay (${shortcut} to show)`,
   openSettings: "Settings",
@@ -133,6 +141,9 @@ const en: Messages = {
   settings: {
     title: "Settings",
     language: "Language",
+    appearance: "Overlay appearance",
+    opacity: "Background opacity",
+    resizeHint: "Drag the bottom-right corner to resize. Size and position are remembered.",
     languages: { zh: "简体中文", en: "English" },
     shortcuts: "Shortcuts",
     toggleOverlay: "Show/hide overlay",
@@ -169,6 +180,8 @@ const en: Messages = {
     exportScriptHint:
       "Open any assets.codmunity.gg image in your browser, press F12, paste into the console and run it. It downloads a .json file you can then pick with Import images.",
     exportScriptCopied: "Copied to clipboard",
+    exportScriptNothingMissing:
+      "All images are already saved offline, so there's nothing to export. Available after an online update adds new weapons.",
     exportScriptFailed: (detail) => `Couldn't copy: ${detail}`,
     app: "App",
     version: (version) => `Version v${version}`,

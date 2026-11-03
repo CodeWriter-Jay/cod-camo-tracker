@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./App.css";
 import { FavoritesPanel } from "./components/FavoritesPanel";
 import { MasteryPanel } from "./components/MasteryPanel";
@@ -12,6 +13,7 @@ import { useCatalogData } from "./hooks/useCatalogData";
 import { ImageLibraryContext, useImageLibrary } from "./hooks/useImageLibrary";
 import { useOverlayControls, type OverlayError } from "./hooks/useOverlayControls";
 import { useTrackerState } from "./hooks/useTrackerState";
+import { useWindowPersistence } from "./hooks/useWindowPersistence";
 import { LanguageContext, useI18n } from "./i18n/I18nContext";
 import { messages, type Messages } from "./i18n/messages";
 import { getOverallCompletion } from "./lib/progress";
@@ -33,6 +35,8 @@ function App() {
   const { loadStatus } = tracker;
   const settings = loadStatus.status === "ready" ? loadStatus.data.settings : null;
   const overlay = useOverlayControls(settings?.shortcuts ?? DEFAULT_SHORTCUTS);
+  const [windowError, setWindowError] = useState<string | null>(null);
+  useWindowPersistence(setWindowError);
   // 进度读取前还没有语言设置，按系统语言显示加载与错误提示
   const fallbackT = messages[navigator.language.startsWith("zh") ? "zh" : "en"];
 
@@ -63,6 +67,7 @@ function App() {
             catalogData={catalogData}
             appUpdate={appUpdate}
             overlay={overlay}
+            windowError={windowError}
           />
         </ImageLibraryContext.Provider>
       </CatalogContext.Provider>
@@ -76,9 +81,20 @@ interface TrackerViewProps {
   catalogData: ReturnType<typeof useCatalogData>;
   appUpdate: ReturnType<typeof useAppUpdate>;
   overlay: ReturnType<typeof useOverlayControls>;
+  windowError: string | null;
 }
 
-function TrackerView({ data, tracker, catalogData, appUpdate, overlay }: TrackerViewProps) {
+// 背景不透明度通过 CSS 变量作用于浮层底色，文字与控件不受影响
+const overlayStyle = (opacity: number) => ({ "--overlay-alpha": opacity }) as CSSProperties;
+
+function TrackerView({
+  data,
+  tracker,
+  catalogData,
+  appUpdate,
+  overlay,
+  windowError,
+}: TrackerViewProps) {
   const { t } = useI18n();
   const [view, setView] = useState<View>({ name: "home" });
   const { catalog } = catalogData;
@@ -92,7 +108,9 @@ function TrackerView({ data, tracker, catalogData, appUpdate, overlay }: Tracker
     overall.total === 0 ? 0 : Math.round((overall.completed / overall.total) * 100);
   const errorMessage = overlay.overlayError
     ? formatOverlayError(t, overlay.overlayError)
-    : tracker.saveError && t.saveFailed(tracker.saveError);
+    : tracker.saveError
+      ? t.saveFailed(tracker.saveError)
+      : windowError && t.windowStateFailed(windowError);
   const openWeapon = (weaponId: string) => setView({ name: "weapon", weaponId });
   const goHome = () => setView({ name: "home" });
 
@@ -110,7 +128,7 @@ function TrackerView({ data, tracker, catalogData, appUpdate, overlay }: Tracker
   // 点击穿透时无法操作界面，只保留收藏挑战的精简视图
   if (overlay.isClickThrough) {
     return (
-      <main className="overlay is-compact">
+      <main className="overlay is-compact" style={overlayStyle(settings.overlayOpacity)}>
         {favoritesPanel}
         <p className="hint">{t.clickThroughOn(shortcuts.toggleClickThrough)}</p>
       </main>
@@ -118,7 +136,7 @@ function TrackerView({ data, tracker, catalogData, appUpdate, overlay }: Tracker
   }
 
   return (
-    <main className="overlay">
+    <main className="overlay" style={overlayStyle(settings.overlayOpacity)}>
       <header className="app-header" data-tauri-drag-region>
         <div className="brand" data-tauri-drag-region>
           <span className="brand-mark" aria-hidden />
@@ -235,9 +253,17 @@ function TrackerView({ data, tracker, catalogData, appUpdate, overlay }: Tracker
       )}
 
       {overlay.isOverlayAvailable && (
-        <p className="hint">
-          {t.shortcutHint(shortcuts.toggleOverlay, shortcuts.toggleClickThrough)}
-        </p>
+        <>
+          <p className="hint">
+            {t.shortcutHint(shortcuts.toggleOverlay, shortcuts.toggleClickThrough)}
+          </p>
+          <div
+            className="resize-grip"
+            title={t.resizeWindow}
+            aria-hidden
+            onMouseDown={() => void getCurrentWindow().startResizeDragging("SouthEast")}
+          />
+        </>
       )}
     </main>
   );

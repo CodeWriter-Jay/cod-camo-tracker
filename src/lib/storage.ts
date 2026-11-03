@@ -15,6 +15,9 @@ const LOCAL_STORAGE_PREFIX = "cod-camo-tracker:";
 export const languageSchema = z.enum(["zh", "en"]);
 export type Language = z.infer<typeof languageSchema>;
 
+export const DEFAULT_OVERLAY_OPACITY = 0.9;
+export const MIN_OVERLAY_OPACITY = 0.3;
+
 export const DEFAULT_SHORTCUTS = {
   toggleOverlay: "Alt+C",
   toggleClickThrough: "Alt+X",
@@ -33,6 +36,8 @@ const persistedStateSchema = z.object({
     shortcuts: z
       .object({ toggleOverlay: z.string(), toggleClickThrough: z.string() })
       .default(DEFAULT_SHORTCUTS),
+    /** 浮层背景不透明度，文字与控件始终保持不透明 */
+    overlayOpacity: z.number().min(MIN_OVERLAY_OPACITY).max(1).default(DEFAULT_OVERLAY_OPACITY),
   }),
 });
 
@@ -42,7 +47,12 @@ export type Settings = PersistedState["settings"];
 export const createDefaultState = (): PersistedState => ({
   completed: {},
   favorites: [],
-  settings: { mode: "dmz", language: detectLanguage(), shortcuts: DEFAULT_SHORTCUTS },
+  settings: {
+    mode: "dmz",
+    language: detectLanguage(),
+    shortcuts: DEFAULT_SHORTCUTS,
+    overlayOpacity: DEFAULT_OVERLAY_OPACITY,
+  },
 });
 
 let storePromise: ReturnType<typeof load> | null = null;

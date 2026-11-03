@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import raw from "../data-source/codmunity-mw4-raw.json";
@@ -142,5 +142,28 @@ describe("App", () => {
 
     await user.keyboard("{Control>}{Shift>}k{/Shift}{/Control}");
     expect(screen.getByRole("button", { name: "显示/隐藏浮层: Ctrl+Shift+K" })).toBeInTheDocument();
+  });
+
+  it("should adjust overlay background opacity and remember it", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    fireEvent.change(screen.getByRole("slider", { name: /背景不透明度/ }), {
+      target: { value: "0.5" },
+    });
+
+    expect(screen.getByRole("main")).toHaveStyle({ "--overlay-alpha": "0.5" });
+    expect(screen.getByText("50%")).toBeInTheDocument();
+    const saved = JSON.parse(localStorage.getItem("cod-camo-tracker:state") ?? "{}");
+    expect(saved.settings.overlayOpacity).toBe(0.5);
+  });
+
+  it("should explain why export script is unavailable when nothing is missing", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+
+    expect(screen.getByRole("button", { name: "复制导出脚本" })).toBeDisabled();
+    expect(screen.getByText(/当前所有图片都已离线保存，无需导出/)).toBeInTheDocument();
   });
 });

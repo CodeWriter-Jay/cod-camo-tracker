@@ -16,6 +16,8 @@
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
     "updater:default",
-    "process:allow-restart"
+    "process:allow-restart",
+    "core:window:allow-start-resize-dragging",
+    "window-state:default"
   ]
 }

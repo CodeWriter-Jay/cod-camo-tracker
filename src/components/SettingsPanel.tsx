@@ -5,7 +5,7 @@ import type { CatalogUpdateStatus } from "../hooks/useCatalogData";
 import { useImages } from "../hooks/useImageLibrary";
 import { useI18n } from "../i18n/I18nContext";
 import { buildExportScript } from "../lib/exportScript";
-import { DEFAULT_SHORTCUTS, type Settings } from "../lib/storage";
+import { DEFAULT_SHORTCUTS, MIN_OVERLAY_OPACITY, type Settings } from "../lib/storage";
 import { ShortcutRecorder } from "./ShortcutRecorder";
 
 // 与打包图片尺寸一致（界面显示尺寸的 2 倍）
@@ -131,6 +131,24 @@ export function SettingsPanel({
       </div>
 
       <div className="setting-group">
+        <h3 className="section-title">{t.settings.appearance}</h3>
+        <label className="setting-row">
+          <span className="setting-label">{t.settings.opacity}</span>
+          <input
+            type="range"
+            className="slider"
+            min={MIN_OVERLAY_OPACITY}
+            max={1}
+            step={0.05}
+            value={settings.overlayOpacity}
+            onChange={(event) => onSettingsChange({ overlayOpacity: event.target.valueAsNumber })}
+          />
+          <span className="stat">{Math.round(settings.overlayOpacity * 100)}%</span>
+        </label>
+        {appUpdate.isAvailable && <p className="setting-note">{t.settings.resizeHint}</p>}
+      </div>
+
+      <div className="setting-group">
         <h3 className="section-title">{t.settings.shortcuts}</h3>
         <ShortcutRecorder
           label={t.settings.toggleOverlay}
@@ -206,7 +224,11 @@ export function SettingsPanel({
           onChange={(event) => void handleImport(event.target.files)}
         />
         <p className="setting-note">{t.settings.importHint}</p>
-        <p className="setting-note">{t.settings.exportScriptHint}</p>
+        <p className="setting-note">
+          {images.missing.length === 0
+            ? t.settings.exportScriptNothingMissing
+            : t.settings.exportScriptHint}
+        </p>
         <FeedbackText feedback={imageFeedback} />
       </div>
 
