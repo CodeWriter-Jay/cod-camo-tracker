@@ -16,13 +16,13 @@
 
 ![The overlay in game](docs/screenshots/overlay-en.jpg)
 
-<p align="center"><sub>The overlay sits on top of the game as a translucent, always-on-top window, with adjustable background opacity and size</sub></p>
+<p align="center"><sub>A separate always-on-top overlay window shows only your favorite challenges; once pinned, clicks pass straight through to the game</sub></p>
 
 ## Features
 
-- **In-game overlay**: a transparent, always-on-top window. `Alt+C` shows or hides it and `Alt+X` toggles click-through, so you never have to leave the game to check progress
-- **Adjustable look**: set background opacity from 30% to 100%; drag the bottom-right corner to resize, and size and position are remembered
-- **Favorite challenges**: pin the camos you're grinding to the home screen; once checked off, each is replaced by that weapon's next camo
+- **Main window + separate overlay**: the main window is a regular desktop window (minimize, maximize, close) where you manage every weapon and camo; the overlay is a small always-on-top window showing only your favorite challenges, so you never have to leave the game
+- **Pin to toggle click-through**: when pinned, the whole overlay passes clicks through and only the pin stays clickable; unpin to check off challenges, move or resize it, switch Multiplayer / DMZ and adjust background opacity
+- **Favorite challenges**: track the camos you're grinding; once checked off, each is replaced by that weapon's next camo
 - **Mode-aware requirements**: Multiplayer and DMZ share completion, and switching modes shows each mode's own challenge
 - **Prerequisite auto-check**: checking a military camo fills in the earlier military camos; checking Gold (or any completionist camo) fills in every earlier camo on that weapon
 - **English & Chinese**: UI, weapon names and challenge text in English or Simplified Chinese
@@ -30,7 +30,7 @@
 - **Online data updates**: when new weapons drop, pull the latest weapons and camos from codmunity in one click
 - **Auto-update**: check for a new version in Settings and install it in place
 
-![Home](docs/screenshots/home-en.jpg)
+![Main window](docs/screenshots/home-en.jpg)
 
 <table>
   <tr>
@@ -39,7 +39,7 @@
   </tr>
   <tr>
     <td align="center">Weapon details: Military / Special / Completionist groups, ☆ to favorite, check when done</td>
-    <td align="center">Settings: language, appearance, shortcuts, data update, image import, app updates</td>
+    <td align="center">Settings: language, overlay appearance, shortcuts, data update, image import, app updates</td>
   </tr>
 </table>
 
@@ -52,17 +52,25 @@
 
 ## Usage
 
+1. In the main window, open a weapon and tap ☆ on the camos you're grinding
+2. Click **Overlay** in the top-right corner of the main window to show the overlay on top of the game (it starts pinned, with click-through on)
+3. To adjust it, click the 📌 pin on the overlay to unpin:
+
+   <img src="docs/screenshots/overlay-unpinned-en.jpg" alt="Unpinned overlay" width="380" />
+
+   Check off a challenge and it moves on to that weapon's next camo. Drag the title to move it, drag the bottom-right corner to resize, switch Multiplayer / DMZ and use `−` / `+` for background opacity. Click the pin again when you're done
+
 | Action | What it does |
 |---|---|
-| `Alt+C` | Show / hide the overlay |
-| `Alt+X` | Toggle click-through: mouse input goes to the game and the overlay shows only your favorite challenges |
-| ☆ | Favorite a camo in weapon details; favorites appear at the top of the home screen |
-| Checkbox | Mark a camo as done; unchecking only affects that camo |
-| Bottom-right corner | Drag to resize the overlay; drag the title bar to move it |
+| Overlay / Close overlay | Button in the main window's top-right corner; shows or hides the overlay window |
+| 📌 Pin | Toggles click-through on the overlay; while pinned only the pin is clickable |
+| `Alt+C` | Show / hide the main window |
+| `Alt+X` | Show / hide the overlay |
 
-- Shortcuts and background opacity can be changed in Settings
+- Shortcuts can be changed or cleared in Settings; the app works fine without them
+- Closing the main window quits the app and closes the overlay too; main window and overlay sizes and positions are remembered separately
 - Run the game in **borderless windowed** or windowed mode; the overlay can't draw over exclusive fullscreen
-- The tracker is just a separate always-on-top window. It **does not inject into the game or read game memory**
+- The tracker is just a separate desktop window. It **does not inject into the game or read game memory**
 
 ## Development
 
