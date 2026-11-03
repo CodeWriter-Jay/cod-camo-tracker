@@ -16,15 +16,27 @@ export const languageSchema = z.enum(["zh", "en"]);
 export type Language = z.infer<typeof languageSchema>;
 
 export const DEFAULT_OVERLAY_OPACITY = 0.9;
-export const MIN_OVERLAY_OPACITY = 0.3;
+export const MIN_OVERLAY_OPACITY = 0;
 
+/** 空字符串表示未设置；窗口按钮可完成同样操作，快捷键不是必需的 */
 export const DEFAULT_SHORTCUTS = {
-  toggleOverlay: "Alt+C",
-  toggleClickThrough: "Alt+X",
+  toggleWindow: "Alt+C",
+  toggleOverlay: "Alt+X",
 };
 export type Shortcuts = typeof DEFAULT_SHORTCUTS;
+export type ShortcutAction = keyof Shortcuts;
 
 const detectLanguage = (): Language => (navigator.language.startsWith("zh") ? "zh" : "en");
+
+// 1.0.0 及之前：toggleOverlay 为显示/隐藏窗口，toggleClickThrough 为点击穿透（即现在的浮层窗口）
+const shortcutsSchema = z.preprocess(
+  (raw) => {
+    if (typeof raw !== "object" || raw === null || !("toggleClickThrough" in raw)) return raw;
+    const legacy = raw as { toggleOverlay?: unknown; toggleClickThrough?: unknown };
+    return { toggleWindow: legacy.toggleOverlay, toggleOverlay: legacy.toggleClickThrough };
+  },
+  z.object({ toggleWindow: z.string(), toggleOverlay: z.string() }),
+);
 
 // 旧版本缺少的字段均有默认值，旧数据可直接读取；未知字段（如 pinnedWeaponId）会被剥离
 const persistedStateSchema = z.object({
@@ -33,9 +45,7 @@ const persistedStateSchema = z.object({
   settings: z.object({
     mode: modeIdSchema.default("dmz"),
     language: languageSchema.default(detectLanguage),
-    shortcuts: z
-      .object({ toggleOverlay: z.string(), toggleClickThrough: z.string() })
-      .default(DEFAULT_SHORTCUTS),
+    shortcuts: shortcutsSchema.default(DEFAULT_SHORTCUTS),
     /** 浮层背景不透明度，文字与控件始终保持不透明 */
     overlayOpacity: z.number().min(MIN_OVERLAY_OPACITY).max(1).default(DEFAULT_OVERLAY_OPACITY),
   }),

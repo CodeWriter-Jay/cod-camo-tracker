@@ -1,27 +1,29 @@
-import { useState, type CSSProperties } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useState } from "react";
 import "./App.css";
 import { FavoritesPanel } from "./components/FavoritesPanel";
 import { MasteryPanel } from "./components/MasteryPanel";
 import { ProgressBar } from "./components/ProgressBar";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { TitleBar } from "./components/TitleBar";
 import { WeaponDetail } from "./components/WeaponDetail";
 import { WeaponList } from "./components/WeaponList";
 import { CatalogContext } from "./data/catalog";
 import { useAppUpdate } from "./hooks/useAppUpdate";
 import { useCatalogData } from "./hooks/useCatalogData";
+import { useGlobalShortcuts, type ShortcutError } from "./hooks/useGlobalShortcuts";
 import { ImageLibraryContext, useImageLibrary } from "./hooks/useImageLibrary";
-import { useOverlayControls, type OverlayError } from "./hooks/useOverlayControls";
 import { useTrackerState } from "./hooks/useTrackerState";
-import { useWindowPersistence } from "./hooks/useWindowPersistence";
+import { useMainWindow } from "./hooks/useMainWindow";
+import { useOverlayWindow } from "./hooks/useOverlayWindow";
 import { LanguageContext, useI18n } from "./i18n/I18nContext";
 import { messages, type Messages } from "./i18n/messages";
 import { getOverallCompletion } from "./lib/progress";
+import { buildOverlayState } from "./overlay/protocol";
 import { DEFAULT_SHORTCUTS, type PersistedState } from "./lib/storage";
 
 type View = { name: "home" } | { name: "weapon"; weaponId: string } | { name: "settings" };
 
-const formatOverlayError = (t: Messages, error: OverlayError) =>
+const formatShortcutError = (t: Messages, error: ShortcutError) =>
   error.kind === "register"
     ? t.shortcutRegisterFailed(error.detail)
     : t.shortcutFailed(error.shortcut, error.detail);
@@ -32,11 +34,26 @@ function App() {
   const catalogData = useCatalogData();
   const imageLibrary = useImageLibrary(catalogData.catalog);
   const appUpdate = useAppUpdate();
-  const { loadStatus } = tracker;
-  const settings = loadStatus.status === "ready" ? loadStatus.data.settings : null;
-  const overlay = useOverlayControls(settings?.shortcuts ?? DEFAULT_SHORTCUTS);
-  const [windowError, setWindowError] = useState<string | null>(null);
-  useWindowPersistence(setWindowError);
+  const { loadStatus, updateSettings } = tracker;
+  const data = loadStatus.status === "ready" ? loadStatus.data : null;
+  const mainWindow = useMainWindow();
+  const overlayWindow = useOverlayWindow(
+    data ? buildOverlayState(data, catalogData.catalog) : null,
+    {
+      onOpacityChange: (overlayOpacity) => updateSettings({ overlayOpacity }),
+      onModeChange: (mode) => updateSettings({ mode }),
+      // 与主窗口勾选走同一套规则：联动前置迷彩、收藏自动切换到下一个
+      onDoneChange: ({ key, done }) => {
+        const [weaponId, camoId] = key.split(":");
+        const weapon = catalogData.catalog.weapons.find((item) => item.id === weaponId);
+        if (weapon) tracker.setCamoDone(weapon, camoId, done);
+      },
+    },
+  );
+  const shortcutError = useGlobalShortcuts(data?.settings.shortcuts ?? DEFAULT_SHORTCUTS, {
+    toggleWindow: mainWindow.toggleVisible,
+    toggleOverlay: overlayWindow.toggleOverlay,
+  });
   // 进度读取前还没有语言设置，按系统语言显示加载与错误提示
   const fallbackT = messages[navigator.language.startsWith("zh") ? "zh" : "en"];
 
@@ -66,8 +83,9 @@ function App() {
             tracker={tracker}
             catalogData={catalogData}
             appUpdate={appUpdate}
-            overlay={overlay}
-            windowError={windowError}
+            mainWindow={mainWindow}
+            overlayWindow={overlayWindow}
+            shortcutError={shortcutError}
           />
         </ImageLibraryContext.Provider>
       </CatalogContext.Provider>
@@ -80,93 +98,54 @@ interface TrackerViewProps {
   tracker: ReturnType<typeof useTrackerState>;
   catalogData: ReturnType<typeof useCatalogData>;
   appUpdate: ReturnType<typeof useAppUpdate>;
-  overlay: ReturnType<typeof useOverlayControls>;
-  windowError: string | null;
+  mainWindow: ReturnType<typeof useMainWindow>;
+  overlayWindow: ReturnType<typeof useOverlayWindow>;
+  shortcutError: ShortcutError | null;
 }
-
-// 背景不透明度通过 CSS 变量作用于浮层底色，文字与控件不受影响
-const overlayStyle = (opacity: number) => ({ "--overlay-alpha": opacity }) as CSSProperties;
 
 function TrackerView({
   data,
   tracker,
   catalogData,
   appUpdate,
-  overlay,
-  windowError,
+  mainWindow,
+  overlayWindow,
+  shortcutError,
 }: TrackerViewProps) {
   const { t } = useI18n();
   const [view, setView] = useState<View>({ name: "home" });
   const { catalog } = catalogData;
   const { completed, favorites, settings } = data;
   const { mode, shortcuts } = settings;
-
   const selectedWeapon =
     view.name === "weapon" ? catalog.weapons.find((weapon) => weapon.id === view.weaponId) : null;
   const overall = getOverallCompletion(completed, catalog.weapons);
   const overallPercent =
     overall.total === 0 ? 0 : Math.round((overall.completed / overall.total) * 100);
-  const errorMessage = overlay.overlayError
-    ? formatOverlayError(t, overlay.overlayError)
+  const windowError = mainWindow.windowError ?? overlayWindow.overlayError;
+  const errorMessage = shortcutError
+    ? formatShortcutError(t, shortcutError)
     : tracker.saveError
       ? t.saveFailed(tracker.saveError)
-      : windowError && t.windowStateFailed(windowError);
+      : windowError && t.windowFailed(windowError);
+  const shortcutHint = t.shortcutHint(shortcuts.toggleWindow, shortcuts.toggleOverlay);
   const openWeapon = (weaponId: string) => setView({ name: "weapon", weaponId });
   const goHome = () => setView({ name: "home" });
 
-  const favoritesPanel = (
-    <FavoritesPanel
-      mode={mode}
-      favorites={favorites}
-      completed={completed}
-      onDoneChange={tracker.setCamoDone}
-      onToggleFavorite={tracker.toggleFavoriteKey}
-      onOpenWeapon={openWeapon}
-    />
-  );
-
-  // 点击穿透时无法操作界面，只保留收藏挑战的精简视图
-  if (overlay.isClickThrough) {
-    return (
-      <main className="overlay is-compact" style={overlayStyle(settings.overlayOpacity)}>
-        {favoritesPanel}
-        <p className="hint">{t.clickThroughOn(shortcuts.toggleClickThrough)}</p>
-      </main>
-    );
-  }
-
   return (
-    <main className="overlay" style={overlayStyle(settings.overlayOpacity)}>
-      <header className="app-header" data-tauri-drag-region>
-        <div className="brand" data-tauri-drag-region>
-          <span className="brand-mark" aria-hidden />
-          <h1 data-tauri-drag-region>{t.appTitle}</h1>
-          <span className="tag">{t.appSubtitle}</span>
-        </div>
-        <div className="header-actions">
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={t.openSettings}
-            aria-pressed={view.name === "settings"}
-            onClick={() =>
-              setView(view.name === "settings" ? { name: "home" } : { name: "settings" })
-            }
-          >
-            ⚙
-          </button>
-          {overlay.isOverlayAvailable && (
-            <button
-              type="button"
-              className="text-button"
-              title={t.hideOverlayHint(shortcuts.toggleOverlay)}
-              onClick={() => void overlay.hideOverlay()}
-            >
-              {t.hideOverlay}
-            </button>
-          )}
-        </div>
-      </header>
+    <main className="overlay">
+      <TitleBar
+        isDesktop={mainWindow.isDesktop}
+        isSettingsOpen={view.name === "settings"}
+        onToggleSettings={() =>
+          setView(view.name === "settings" ? { name: "home" } : { name: "settings" })
+        }
+        isOverlayVisible={overlayWindow.isVisible}
+        onToggleOverlay={() => void overlayWindow.toggleOverlay()}
+        onMinimize={mainWindow.minimize}
+        onToggleMaximize={mainWindow.toggleMaximize}
+        onClose={mainWindow.close}
+      />
 
       {appUpdate.status.state === "available" && view.name !== "settings" && (
         <div className="banner" role="status">
@@ -240,7 +219,14 @@ function TrackerView({
             />
           ) : (
             <>
-              {favoritesPanel}
+              <FavoritesPanel
+                mode={mode}
+                favorites={favorites}
+                completed={completed}
+                onDoneChange={tracker.setCamoDone}
+                onToggleFavorite={tracker.toggleFavoriteKey}
+                onOpenWeapon={openWeapon}
+              />
               <WeaponList completed={completed} onSelect={openWeapon} />
               <MasteryPanel
                 mode={mode}
@@ -252,19 +238,7 @@ function TrackerView({
         </>
       )}
 
-      {overlay.isOverlayAvailable && (
-        <>
-          <p className="hint">
-            {t.shortcutHint(shortcuts.toggleOverlay, shortcuts.toggleClickThrough)}
-          </p>
-          <div
-            className="resize-grip"
-            title={t.resizeWindow}
-            aria-hidden
-            onMouseDown={() => void getCurrentWindow().startResizeDragging("SouthEast")}
-          />
-        </>
-      )}
+      {mainWindow.isDesktop && shortcutHint && <p className="hint">{shortcutHint}</p>}
     </main>
   );
 }

@@ -136,12 +136,12 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(await screen.findByRole("button", { name: "设置" }));
-    await user.click(screen.getByRole("button", { name: "显示/隐藏浮层: Alt+C" }));
+    await user.click(screen.getByRole("button", { name: "显示/隐藏窗口: Alt+C" }));
     await user.keyboard("k");
     expect(screen.getByRole("alert")).toHaveTextContent("需要包含 Ctrl、Alt 或 Shift 等修饰键");
 
     await user.keyboard("{Control>}{Shift>}k{/Shift}{/Control}");
-    expect(screen.getByRole("button", { name: "显示/隐藏浮层: Ctrl+Shift+K" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "显示/隐藏窗口: Ctrl+Shift+K" })).toBeInTheDocument();
   });
 
   it("should adjust overlay background opacity and remember it", async () => {
@@ -152,7 +152,6 @@ describe("App", () => {
       target: { value: "0.5" },
     });
 
-    expect(screen.getByRole("main")).toHaveStyle({ "--overlay-alpha": "0.5" });
     expect(screen.getByText("50%")).toBeInTheDocument();
     const saved = JSON.parse(localStorage.getItem("cod-camo-tracker:state") ?? "{}");
     expect(saved.settings.overlayOpacity).toBe(0.5);
@@ -165,5 +164,37 @@ describe("App", () => {
 
     expect(screen.getByRole("button", { name: "复制导出脚本" })).toBeDisabled();
     expect(screen.getByText(/当前所有图片都已离线保存，无需导出/)).toBeInTheDocument();
+  });
+
+  it("should allow clearing a shortcut", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    const [clearWindowShortcut] = screen.getAllByRole("button", { name: "清空" });
+    await user.click(clearWindowShortcut);
+
+    expect(screen.getByRole("button", { name: "显示/隐藏窗口: 未设置" })).toBeInTheDocument();
+    const saved = JSON.parse(localStorage.getItem("cod-camo-tracker:state") ?? "{}");
+    expect(saved.settings.shortcuts).toEqual({ toggleWindow: "", toggleOverlay: "Alt+X" });
+  });
+
+  it("should migrate shortcuts saved by 1.0.0", async () => {
+    localStorage.setItem(
+      "cod-camo-tracker:state",
+      JSON.stringify({
+        completed: {},
+        favorites: [],
+        settings: {
+          mode: "dmz",
+          shortcuts: { toggleOverlay: "Ctrl+1", toggleClickThrough: "Ctrl+2" },
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+
+    expect(screen.getByRole("button", { name: "显示/隐藏窗口: Ctrl+1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "显示/隐藏浮层: Ctrl+2" })).toBeInTheDocument();
   });
 });

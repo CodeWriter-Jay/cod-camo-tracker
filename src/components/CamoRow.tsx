@@ -5,8 +5,9 @@ import { CamoImage } from "./CamoImage";
 
 interface CamoRowProps {
   camo: Trackable;
-  isDone: boolean;
-  onDoneChange: (done: boolean) => void;
+  isDone?: boolean;
+  /** 不传时为只读展示（浮层模式），不显示收藏与勾选控件 */
+  onDoneChange?: (done: boolean) => void;
   /** 显示在迷彩名上方的补充信息，如收藏列表中的武器名 */
   eyebrow?: ReactNode;
   isFavorite?: boolean;
@@ -15,7 +16,7 @@ interface CamoRowProps {
 
 export function CamoRow({
   camo,
-  isDone,
+  isDone = false,
   onDoneChange,
   eyebrow,
   isFavorite = false,
@@ -51,15 +52,17 @@ export function CamoRow({
           {isFavorite ? "★" : "☆"}
         </button>
       )}
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={isDone}
-          aria-label={t.doneLabel(name)}
-          onChange={(event) => onDoneChange(event.target.checked)}
-        />
-        <span className="check-box" aria-hidden />
-      </label>
+      {onDoneChange && (
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={isDone}
+            aria-label={t.doneLabel(name)}
+            onChange={(event) => onDoneChange(event.target.checked)}
+          />
+          <span className="check-box" aria-hidden />
+        </label>
+      )}
     </li>
   );
 }

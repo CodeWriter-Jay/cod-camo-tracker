@@ -5,7 +5,7 @@ import { hasModifier, toAccelerator } from "../lib/shortcut";
 interface ShortcutRecorderProps {
   label: string;
   value: string;
-  /** 另一个快捷键，用于防止两个快捷键相同 */
+  /** 另一个快捷键，用于防止两个快捷键相同；空字符串表示未设置 */
   otherValue: string;
   onChange: (accelerator: string) => void;
 }
@@ -30,7 +30,7 @@ export function ShortcutRecorder({ label, value, otherValue, onChange }: Shortcu
       setError(t.settings.shortcutNeedsModifier);
       return;
     }
-    if (accelerator === otherValue) {
+    if (otherValue !== "" && accelerator === otherValue) {
       setError(t.settings.shortcutDuplicate);
       return;
     }
@@ -45,7 +45,7 @@ export function ShortcutRecorder({ label, value, otherValue, onChange }: Shortcu
       <button
         type="button"
         className={isRecording ? "kbd is-recording" : "kbd"}
-        aria-label={`${label}: ${value}`}
+        aria-label={`${label}: ${value || t.settings.shortcutUnset}`}
         onClick={() => {
           setError(null);
           setIsRecording((current) => !current);
@@ -53,7 +53,18 @@ export function ShortcutRecorder({ label, value, otherValue, onChange }: Shortcu
         onKeyDown={handleKeyDown}
         onBlur={stopRecording}
       >
-        {isRecording ? t.settings.recording : value}
+        {isRecording ? t.settings.recording : value || t.settings.shortcutUnset}
+      </button>
+      <button
+        type="button"
+        className="text-button"
+        disabled={value === ""}
+        onClick={() => {
+          setError(null);
+          onChange("");
+        }}
+      >
+        {t.settings.clearShortcut}
       </button>
       {error && (
         <span className="setting-error" role="alert">

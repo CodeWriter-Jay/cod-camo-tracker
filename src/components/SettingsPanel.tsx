@@ -151,21 +151,22 @@ export function SettingsPanel({
       <div className="setting-group">
         <h3 className="section-title">{t.settings.shortcuts}</h3>
         <ShortcutRecorder
+          label={t.settings.toggleWindow}
+          value={shortcuts.toggleWindow}
+          otherValue={shortcuts.toggleOverlay}
+          onChange={(toggleWindow) =>
+            onSettingsChange({ shortcuts: { ...shortcuts, toggleWindow } })
+          }
+        />
+        <ShortcutRecorder
           label={t.settings.toggleOverlay}
           value={shortcuts.toggleOverlay}
-          otherValue={shortcuts.toggleClickThrough}
+          otherValue={shortcuts.toggleWindow}
           onChange={(toggleOverlay) =>
             onSettingsChange({ shortcuts: { ...shortcuts, toggleOverlay } })
           }
         />
-        <ShortcutRecorder
-          label={t.settings.toggleClickThrough}
-          value={shortcuts.toggleClickThrough}
-          otherValue={shortcuts.toggleOverlay}
-          onChange={(toggleClickThrough) =>
-            onSettingsChange({ shortcuts: { ...shortcuts, toggleClickThrough } })
-          }
-        />
+        <p className="setting-note">{t.settings.shortcutsOptional}</p>
         <button
           type="button"
           className="text-button"

@@ -1,9 +1,10 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for the main window",
+  "description": "Capability for the main and overlay windows",
   "windows": [
-    "main"
+    "main",
+    "overlay"
   ],
   "permissions": [
     "core:default",
@@ -12,12 +13,15 @@
     "core:window:allow-set-focus",
     "core:window:allow-set-ignore-cursor-events",
     "core:window:allow-start-dragging",
+    "core:window:allow-start-resize-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-close",
+    "core:window:allow-cursor-position",
     "store:default",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
     "updater:default",
-    "process:allow-restart",
-    "core:window:allow-start-resize-dragging",
-    "window-state:default"
+    "process:allow-restart"
   ]
 }

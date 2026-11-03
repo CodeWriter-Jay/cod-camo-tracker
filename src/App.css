@@ -1,5 +1,4 @@
 :root {
-  --overlay-alpha: 0.9;
   --panel: rgba(255, 255, 255, 0.035);
   --surface: rgba(255, 255, 255, 0.06);
   --surface-hover: rgba(255, 255, 255, 0.1);
@@ -74,16 +73,26 @@ h3 {
   gap: 12px;
   min-height: 100vh;
   padding: 14px;
-  border: 1px solid var(--border);
+  /* 底色、点缀渐变与外框都随不透明度变化，0% 时完全透明 */
+  border: 1px solid rgba(255, 255, 255, calc(0.09 * var(--overlay-alpha)));
   border-radius: 10px;
   background:
-    radial-gradient(120% 60% at 100% 0%, rgba(196, 241, 53, 0.08), transparent 60%),
+    radial-gradient(
+      120% 60% at 100% 0%,
+      rgba(196, 241, 53, calc(0.08 * var(--overlay-alpha))),
+      transparent 60%
+    ),
     rgba(9, 11, 10, var(--overlay-alpha));
-  backdrop-filter: blur(12px);
 }
 
-.overlay.is-compact {
-  min-height: auto;
+/* 主窗口不透明；浮层窗口通过内联变量设置背景不透明度 */
+.overlay {
+  --overlay-alpha: 1;
+}
+
+.overlay.is-overlay {
+  gap: 8px;
+  padding: 10px;
 }
 
 /* ---------- 头部与总进度 ---------- */
@@ -710,4 +719,170 @@ h3 {
     var(--border-strong) 74% 81%,
     transparent 81%
   );
+}
+
+/* ---------- 窗口控制按钮 ---------- */
+
+.window-controls {
+  display: flex;
+  margin-left: 4px;
+}
+
+.window-control {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.window-control svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+
+.window-control:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.window-control.is-close:hover:not(:disabled) {
+  background: #c42b1c;
+  color: #fff;
+}
+
+/* ---------- 浮层模式 ---------- */
+
+.overlay-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.overlay-handle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  cursor: move;
+  user-select: none;
+}
+
+.overlay-title {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overlay-opacity {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.overlay-opacity .stat {
+  min-width: 34px;
+  text-align: center;
+}
+
+.camo-weapon {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.is-overlay .camo-row {
+  padding: 7px 9px;
+}
+
+/* ---------- 浮层窗口：图钉与紧凑控件 ---------- */
+
+.overlay-bar {
+  flex-wrap: wrap;
+}
+
+.pin svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* 固定（点击穿透）时图钉高亮，提示当前只有它可点击 */
+.pin[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.is-pinned .overlay-handle {
+  cursor: default;
+}
+
+.segmented.is-small {
+  padding: 2px;
+}
+
+.segmented.is-small button {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+/* 解除固定后的模式切换与不透明度控件单独占一行，窄浮层下也不拥挤 */
+.overlay-controls {
+  display: flex;
+  flex-basis: 100%;
+  order: 1;
+  align-items: center;
+  gap: 8px;
+}
+
+.overlay-controls .segmented {
+  flex: 1;
+}
+
+.segmented button {
+  white-space: nowrap;
+}
+
+/* 浮层文字加深色描边阴影，背景调到很低甚至 0% 时在亮色游戏画面上依然可读 */
+.is-overlay {
+  --overlay-text-outline:
+    0 0 1px rgba(0, 0, 0, 0.95), 0 0 3px rgba(0, 0, 0, 0.85), 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.is-overlay .overlay-title,
+.is-overlay .camo-weapon,
+.is-overlay .camo-name,
+.is-overlay .camo-challenge,
+.is-overlay .stat,
+.is-overlay .empty,
+.is-overlay .tag {
+  text-shadow: var(--overlay-text-outline);
+}
+
+.is-overlay .tag {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: var(--text);
+}
+
+/* 浮层里的挑战描述是重点信息，提亮以免在亮背景上发灰 */
+.is-overlay .camo-challenge {
+  color: #dfe4da;
+}
+
+.is-overlay .thumb {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
 }
