@@ -285,7 +285,8 @@ h3 {
   letter-spacing: 0.06em;
 }
 
-.segmented button[aria-selected="true"] {
+.segmented button[aria-selected="true"],
+.segmented button[aria-checked="true"] {
   background: var(--accent);
   color: #0d1005;
 }
@@ -665,4 +666,23 @@ h3 {
 .text-button.is-primary:hover:not(:disabled) {
   background: #d4ff52;
   color: #0d1005;
+}
+
+/* ---------- 宽窗口布局：浮层拉宽后改为多列，避免单行过长 ---------- */
+
+@media (min-width: 760px) {
+  .camo-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  }
+
+  .settings {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .settings > .detail-header {
+    grid-column: 1 / -1;
+  }
 }
