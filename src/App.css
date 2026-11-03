@@ -1,0 +1,592 @@
+:root {
+  --bg: rgba(9, 11, 10, 0.9);
+  --panel: rgba(255, 255, 255, 0.035);
+  --surface: rgba(255, 255, 255, 0.06);
+  --surface-hover: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --text: #eef1ea;
+  --muted: #8b928a;
+  --accent: #c4f135;
+  --accent-soft: rgba(196, 241, 53, 0.14);
+  --star: #ffc53d;
+  --danger: #ff6b5e;
+  --radius: 6px;
+  /* 战术 HUD 风格的切角 */
+  --notch: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+
+  font-family:
+    "Bahnschrift", "DIN Alternate", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+  color-scheme: dark;
+  font-variant-numeric: tabular-nums;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  /* 窗口为透明无边框，背景由 .overlay 提供半透明底色 */
+  background: transparent;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+.overlay {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100vh;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background:
+    radial-gradient(120% 60% at 100% 0%, rgba(196, 241, 53, 0.08), transparent 60%), var(--bg);
+  backdrop-filter: blur(12px);
+}
+
+.overlay.is-compact {
+  min-height: auto;
+}
+
+/* ---------- 头部与总进度 ---------- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: move;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-mark {
+  width: 10px;
+  height: 18px;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 20%, 100% 100%, 0 80%);
+}
+
+.brand h1 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  clip-path: var(--notch);
+  cursor: move;
+}
+
+.summary-text {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.summary-label {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.summary-value {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.summary-value small {
+  font-size: 13px;
+}
+
+/* ---------- 通用元素 ---------- */
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.section-title::before {
+  content: "";
+  width: 3px;
+  height: 11px;
+  background: var(--accent);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.tag,
+.badge {
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 16px;
+}
+
+.badge {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.stat {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.empty {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.error {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--danger);
+  background: rgba(255, 107, 94, 0.1);
+  color: var(--danger);
+}
+
+.text-button {
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.text-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- 模式切换 ---------- */
+
+.segmented {
+  display: flex;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.segmented button {
+  flex: 1;
+  padding: 5px 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.segmented button[aria-selected="true"] {
+  background: var(--accent);
+  color: #0d1005;
+}
+
+/* ---------- 进度条 ---------- */
+
+.progress {
+  height: 3px;
+  overflow: hidden;
+  background: var(--surface-hover);
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  transition: width 0.2s ease;
+}
+
+/* ---------- 迷彩图 ---------- */
+
+/* 迷彩图标为 5:2 画布、中间是方形色块，裁成方形以填满 */
+.thumb {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--surface);
+}
+
+.weapon-image {
+  width: 72px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.is-placeholder {
+  display: inline-block;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--surface),
+    var(--surface) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+/* ---------- 挑战行 ---------- */
+
+.camo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.camo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.camo-row.is-favorite {
+  border-left-color: var(--star);
+}
+
+.camo-row.is-done {
+  border-left-color: var(--accent);
+  background: linear-gradient(90deg, var(--accent-soft), transparent 70%);
+}
+
+.camo-info {
+  display: flex;
+  flex: 1 1 150px;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.camo-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.camo-name {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.camo-row.is-done .camo-name {
+  color: var(--accent);
+}
+
+.camo-challenge {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.star {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 17px;
+}
+
+.star[aria-pressed="true"] {
+  color: var(--star);
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.counter-value {
+  display: flex;
+  align-items: baseline;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.counter-value input {
+  width: 44px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-weight: 700;
+  text-align: right;
+  appearance: textfield;
+}
+
+.counter-value input::-webkit-inner-spin-button,
+.counter-value input::-webkit-outer-spin-button {
+  appearance: none;
+}
+
+.counter-value input:focus-visible {
+  outline: none;
+}
+
+.counter-value:focus-within {
+  border-color: var(--accent);
+}
+
+.counter-target {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.check {
+  position: relative;
+  display: grid;
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.check input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.check-box {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.check input:checked + .check-box {
+  border-color: var(--accent);
+  background: var(--accent)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3 7-7' fill='none' stroke='%230d1005' stroke-width='2.2'/%3E%3C/svg%3E")
+    center / 14px no-repeat;
+}
+
+.check input:focus-visible + .check-box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- 武器列表 ---------- */
+
+.filters {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.filters input,
+.filters select {
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.filters input {
+  flex: 1;
+}
+
+.filters select option {
+  background: #15181a;
+}
+
+.weapon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 6px;
+}
+
+.weapon-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  text-align: left;
+}
+
+.weapon-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.weapon-card .weapon-image {
+  grid-row: span 2;
+  width: 56px;
+  height: 28px;
+}
+
+.weapon-card .progress {
+  grid-column: 2 / -1;
+}
+
+.weapon-name {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- 武器详情 ---------- */
+
+.weapon-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-header h2 {
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+
+.detail-header .stat {
+  margin-left: auto;
+}
+
+.camo-group {
+  margin-top: 4px;
+}
+
+/* ---------- 精通迷彩 ---------- */
+
+.divergence {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  clip-path: var(--notch);
+}
+
+.divergence .progress {
+  margin-top: 6px;
+}

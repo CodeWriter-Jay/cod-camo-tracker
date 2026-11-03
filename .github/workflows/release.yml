@@ -1,0 +1,50 @@
+name: Release
+
+# 推送 v* 标签（如 v0.1.0）或在 Actions 页面手动触发时，构建 Windows 安装包并发布到 Releases
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check
+        run: |
+          pnpm typecheck
+          pnpm lint
+          pnpm test
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # __VERSION__ 会被替换为 tauri.conf.json 中的版本号
+          tagName: v__VERSION__
+          releaseName: COD Camo Tracker v__VERSION__
+          releaseBody: 下载 Assets 中的 `*-setup.exe` 安装即可，图片与数据均已内置，无需联网。
+          releaseDraft: false
+          prerelease: false

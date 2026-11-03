@@ -1,0 +1,42 @@
+import type { CamoGroup } from "./data/catalog";
+import { SHORTCUTS } from "./hooks/useOverlayControls";
+
+/** 界面文案集中维护；武器 / 迷彩名称来自数据文件，保持英文原文 */
+export const copy = {
+  appTitle: "迷彩追踪",
+  appSubtitle: "MW4",
+  loading: "正在读取进度…",
+  loadFailed: "读取进度失败",
+  resetData: "清空进度并重新开始",
+  hideOverlay: "隐藏",
+  hideOverlayHint: `隐藏浮层（${SHORTCUTS.toggleOverlay} 呼出）`,
+  clickThroughOn: `点击穿透中 · ${SHORTCUTS.toggleClickThrough} 恢复操作`,
+  shortcutHint: `${SHORTCUTS.toggleOverlay} 显示/隐藏 · ${SHORTCUTS.toggleClickThrough} 点击穿透`,
+  modeLabel: "模式",
+  overallLabel: "总进度",
+  favoritesTitle: "收藏的挑战",
+  favoritesEmpty: "在武器详情中点击 ☆ 收藏挑战，完成后会自动换成该武器的下一个迷彩",
+  weaponsTitle: "武器",
+  masteryTitle: "精通迷彩",
+  divergenceHint: (camo: string, required: number) => `${required} 把武器完成 ${camo}`,
+  searchPlaceholder: "搜索武器",
+  searchLabel: "搜索武器",
+  categoryLabel: "武器类别",
+  allCategories: "全部类别",
+  noWeapons: "没有匹配的武器",
+  noChallenges: "该武器的迷彩挑战尚未公布",
+  back: "返回",
+  allDone: "已全部完成",
+  favorite: (camo: string) => `收藏 ${camo}`,
+  unfavorite: (camo: string) => `取消收藏 ${camo}`,
+  decrease: (camo: string) => `${camo} 减少 1`,
+  increase: (camo: string) => `${camo} 增加 1`,
+  countLabel: (camo: string) => `${camo} 当前进度`,
+  markDone: "完成",
+  doneLabel: (camo: string) => `${camo} 已完成`,
+  groups: {
+    military: "军事迷彩",
+    special: "特殊迷彩",
+    completionist: "完成者迷彩",
+  } satisfies Record<CamoGroup, string>,
+};
