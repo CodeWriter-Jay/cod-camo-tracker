@@ -88,7 +88,7 @@ Stack: Tauri 2 · React 19 · TypeScript · Vite · zod · Vitest. The Windows i
 Push a version tag and GitHub Actions builds the Windows installer and publishes it to Releases:
 
 ```bash
-git tag v1.0.0 && git push origin v1.0.0
+git tag v1.1.0 && git push origin v1.1.0
 ```
 
 Bump the version in `package.json`, `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml` first.

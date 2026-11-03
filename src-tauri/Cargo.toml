@@ -1,6 +1,6 @@
 [package]
 name = "cod-camo-tracker"
-version = "1.0.0"
+version = "1.1.0"
 description = "Call of Duty MW4 camo tracker overlay"
 authors = ["Jay"]
 edition = "2024"
