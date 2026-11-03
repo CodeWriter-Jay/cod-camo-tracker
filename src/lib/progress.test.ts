@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalog } from "../data/catalog";
+import { bundledCatalog as catalog } from "../data/catalog";
 import { countedCamo, goldCamo, levelCamo, weapon } from "../test/fixtures";
 import {
   getCount,

@@ -590,3 +590,123 @@ h3 {
 .divergence .progress {
   margin-top: 6px;
 }
+
+/* ---------- 头部操作与更新提示 ---------- */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  font-size: 12px;
+}
+
+/* ---------- 设置 ---------- */
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.setting-group .section-title {
+  margin-bottom: 0;
+}
+
+.setting-group .segmented {
+  align-self: stretch;
+}
+
+.setting-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  width: 100%;
+}
+
+.setting-label {
+  flex: 1 1 auto;
+}
+
+.kbd {
+  min-width: 96px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.3);
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.kbd.is-recording {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 400;
+}
+
+.setting-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.setting-error,
+.setting-success {
+  margin: 0;
+  font-size: 12px;
+}
+
+.setting-error {
+  flex-basis: 100%;
+  color: var(--danger);
+}
+
+.setting-success {
+  color: var(--accent);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.text-button.is-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #0d1005;
+  font-weight: 700;
+}
+
+.text-button.is-primary:hover:not(:disabled) {
+  background: #d4ff52;
+  color: #0d1005;
+}

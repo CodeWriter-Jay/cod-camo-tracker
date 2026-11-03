@@ -2,23 +2,20 @@ import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { register, unregister, type ShortcutEvent } from "@tauri-apps/plugin-global-shortcut";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { Shortcuts } from "../lib/storage";
 
-export const SHORTCUTS = {
-  toggleOverlay: "Alt+C",
-  toggleClickThrough: "Alt+X",
-} as const;
+export type OverlayError =
+  { kind: "register"; detail: string } | { kind: "run"; shortcut: string; detail: string };
 
-const SHORTCUT_LIST = Object.values(SHORTCUTS);
-
-// StrictMode 下 effect 会挂载两次，需等上一次注销完成再注册，否则会报“已注册”
+// 需等上一次注销完成再注册（StrictMode 双挂载、修改快捷键时），否则会报“已注册”
 let pendingUnregister: Promise<unknown> = Promise.resolve();
 
 const toMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-export function useOverlayControls() {
+export function useOverlayControls({ toggleOverlay, toggleClickThrough }: Shortcuts) {
   const [isClickThrough, setIsClickThrough] = useState(false);
-  const [overlayError, setOverlayError] = useState<string | null>(null);
-  // 快捷键回调只注册一次，通过 ref 读取最新状态
+  const [overlayError, setOverlayError] = useState<OverlayError | null>(null);
+  // 快捷键回调注册后不随渲染更新，通过 ref 读取最新状态
   const clickThroughRef = useRef(false);
 
   const applyClickThrough = useCallback(async (next: boolean) => {
@@ -38,11 +35,11 @@ export function useOverlayControls() {
     const onPressed = (action: () => Promise<void>) => (event: ShortcutEvent) => {
       if (event.state !== "Pressed") return;
       action().catch((error: unknown) =>
-        setOverlayError(`快捷键 ${event.shortcut} 执行失败：${toMessage(error)}`),
+        setOverlayError({ kind: "run", shortcut: event.shortcut, detail: toMessage(error) }),
       );
     };
 
-    const toggleOverlay = async () => {
+    const showOrHide = async () => {
       if (await appWindow.isVisible()) {
         await appWindow.hide();
         return;
@@ -51,26 +48,27 @@ export function useOverlayControls() {
       await appWindow.setFocus();
     };
 
-    const registration = pendingUnregister.then(() =>
-      Promise.all([
-        register(SHORTCUTS.toggleOverlay, onPressed(toggleOverlay)),
-        register(
-          SHORTCUTS.toggleClickThrough,
-          onPressed(() => applyClickThrough(!clickThroughRef.current)),
-        ),
-      ]),
-    );
+    const shortcuts = [toggleOverlay, toggleClickThrough];
+    const registration = pendingUnregister.then(async () => {
+      await register(toggleOverlay, onPressed(showOrHide));
+      await register(
+        toggleClickThrough,
+        onPressed(() => applyClickThrough(!clickThroughRef.current)),
+      );
+      setOverlayError(null);
+    });
     registration.catch((error: unknown) =>
-      setOverlayError(`全局快捷键注册失败（可能被其他程序占用）：${toMessage(error)}`),
+      setOverlayError({ kind: "register", detail: toMessage(error) }),
     );
 
     return () => {
+      // 注册失败已在上面上报，这里只需保证注销在其之后执行
       pendingUnregister = registration
         .catch(() => undefined)
-        .then(() => unregister(SHORTCUT_LIST))
-        .catch((error: unknown) => setOverlayError(`快捷键注销失败：${toMessage(error)}`));
+        .then(() => unregister(shortcuts))
+        .catch((error: unknown) => setOverlayError({ kind: "register", detail: toMessage(error) }));
     };
-  }, [applyClickThrough]);
+  }, [toggleOverlay, toggleClickThrough, applyClickThrough]);
 
   return {
     isOverlayAvailable: isTauri(),

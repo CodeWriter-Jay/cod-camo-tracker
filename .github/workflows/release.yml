@@ -41,10 +41,13 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 为自动升级包签名，并上传 latest.json 供客户端检查更新
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           # __VERSION__ 会被替换为 tauri.conf.json 中的版本号
           tagName: v__VERSION__
           releaseName: COD Camo Tracker v__VERSION__
-          releaseBody: 下载 Assets 中的 `*-setup.exe` 安装即可，图片与数据均已内置，无需联网。
+          releaseBody: 首次安装请下载 Assets 中的 `*-setup.exe`；已安装的客户端可在「设置 → 检查更新」直接升级。图片与数据均已内置，无需联网。
           releaseDraft: false
           prerelease: false

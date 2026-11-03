@@ -1,5 +1,5 @@
-import { copy } from "../copy";
 import type { Camo, CamoGroup, ModeId, Weapon } from "../data/catalog";
+import { useI18n } from "../i18n/I18nContext";
 import { getCount, getWeaponCompletion, progressKey, type Progress } from "../lib/progress";
 import { CamoImage } from "./CamoImage";
 import { CamoRow } from "./CamoRow";
@@ -26,31 +26,32 @@ export function WeaponDetail({
   onToggleFavorite,
   onCountChange,
 }: WeaponDetailProps) {
+  const { t, weaponName } = useI18n();
   const completion = getWeaponCompletion(progress, mode, weapon);
   const camos = weapon.camos[mode];
 
   return (
-    <section className="weapon-detail" aria-label={weapon.name}>
+    <section className="weapon-detail" aria-label={weaponName(weapon)}>
       <div className="detail-header">
         <button type="button" className="text-button" onClick={onBack}>
-          ← {copy.back}
+          ← {t.back}
         </button>
         <CamoImage file={weapon.image} className="weapon-image" />
-        <h2>{weapon.name}</h2>
+        <h2>{weaponName(weapon)}</h2>
         <span className="stat">
           {completion.completed}/{completion.total}
         </span>
       </div>
-      <ProgressBar {...completion} label={weapon.name} />
+      <ProgressBar {...completion} label={weaponName(weapon)} />
 
-      {camos.length === 0 && <p className="empty">{copy.noChallenges}</p>}
+      {camos.length === 0 && <p className="empty">{t.noChallenges}</p>}
 
       {GROUP_ORDER.map((group) => {
         const groupCamos = camos.filter((camo) => camo.group === group);
         if (groupCamos.length === 0) return null;
         return (
           <div key={group} className="camo-group">
-            <h3 className="section-title">{copy.groups[group]}</h3>
+            <h3 className="section-title">{t.groups[group]}</h3>
             <ul className="camo-list">
               {groupCamos.map((camo) => {
                 const key = progressKey(mode, weapon.id, camo.id);

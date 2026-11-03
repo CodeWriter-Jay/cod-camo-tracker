@@ -3,68 +3,115 @@ import "./App.css";
 import { FavoritesPanel } from "./components/FavoritesPanel";
 import { MasteryPanel } from "./components/MasteryPanel";
 import { ProgressBar } from "./components/ProgressBar";
+import { SettingsPanel } from "./components/SettingsPanel";
 import { WeaponDetail } from "./components/WeaponDetail";
 import { WeaponList } from "./components/WeaponList";
-import { copy } from "./copy";
-import { catalog } from "./data/catalog";
-import { useOverlayControls } from "./hooks/useOverlayControls";
+import { CatalogContext } from "./data/catalog";
+import { useAppUpdate } from "./hooks/useAppUpdate";
+import { useCatalogData } from "./hooks/useCatalogData";
+import { ImageLibraryContext, useImageLibrary } from "./hooks/useImageLibrary";
+import { useOverlayControls, type OverlayError } from "./hooks/useOverlayControls";
 import { useTrackerState } from "./hooks/useTrackerState";
+import { LanguageContext, useI18n } from "./i18n/I18nContext";
+import { messages, type Messages } from "./i18n/messages";
 import { getOverallCompletion } from "./lib/progress";
+import { DEFAULT_SHORTCUTS, type PersistedState } from "./lib/storage";
 
+type View = { name: "home" } | { name: "weapon"; weaponId: string } | { name: "settings" };
+
+const formatOverlayError = (t: Messages, error: OverlayError) =>
+  error.kind === "register"
+    ? t.shortcutRegisterFailed(error.detail)
+    : t.shortcutFailed(error.shortcut, error.detail);
+
+/** 负责加载状态与各类数据源，并通过 Context 向界面提供语言、数据和图片 */
 function App() {
-  const {
-    loadStatus,
-    saveError,
-    changeCamoCount,
-    changeMasteryCount,
-    toggleFavoriteKey,
-    setMode,
-    resetState,
-  } = useTrackerState();
-  const { isOverlayAvailable, isClickThrough, overlayError, hideOverlay } = useOverlayControls();
-  const [selectedWeaponId, setSelectedWeaponId] = useState<string | null>(null);
+  const tracker = useTrackerState();
+  const catalogData = useCatalogData();
+  const imageLibrary = useImageLibrary(catalogData.catalog);
+  const appUpdate = useAppUpdate();
+  const { loadStatus } = tracker;
+  const settings = loadStatus.status === "ready" ? loadStatus.data.settings : null;
+  const overlay = useOverlayControls(settings?.shortcuts ?? DEFAULT_SHORTCUTS);
+  // 进度读取前还没有语言设置，按系统语言显示加载与错误提示
+  const fallbackT = messages[navigator.language.startsWith("zh") ? "zh" : "en"];
 
   if (loadStatus.status === "loading") {
-    return <main className="overlay">{copy.loading}</main>;
+    return <main className="overlay">{fallbackT.loading}</main>;
   }
 
   if (loadStatus.status === "error") {
     return (
       <main className="overlay">
         <p className="error" role="alert">
-          {copy.loadFailed}：{loadStatus.message}
+          {fallbackT.loadFailed(loadStatus.message)}
         </p>
-        <button type="button" className="text-button" onClick={resetState}>
-          {copy.resetData}
+        <button type="button" className="text-button" onClick={tracker.resetState}>
+          {fallbackT.resetData}
         </button>
       </main>
     );
   }
 
-  const { progress, favorites, settings } = loadStatus.data;
-  const { mode } = settings;
-  const selectedWeapon = catalog.weapons.find((weapon) => weapon.id === selectedWeaponId) ?? null;
+  return (
+    <LanguageContext.Provider value={loadStatus.data.settings.language}>
+      <CatalogContext.Provider value={catalogData.catalog}>
+        <ImageLibraryContext.Provider value={imageLibrary}>
+          <TrackerView
+            data={loadStatus.data}
+            tracker={tracker}
+            catalogData={catalogData}
+            appUpdate={appUpdate}
+            overlay={overlay}
+          />
+        </ImageLibraryContext.Provider>
+      </CatalogContext.Provider>
+    </LanguageContext.Provider>
+  );
+}
+
+interface TrackerViewProps {
+  data: PersistedState;
+  tracker: ReturnType<typeof useTrackerState>;
+  catalogData: ReturnType<typeof useCatalogData>;
+  appUpdate: ReturnType<typeof useAppUpdate>;
+  overlay: ReturnType<typeof useOverlayControls>;
+}
+
+function TrackerView({ data, tracker, catalogData, appUpdate, overlay }: TrackerViewProps) {
+  const { t } = useI18n();
+  const [view, setView] = useState<View>({ name: "home" });
+  const { catalog } = catalogData;
+  const { progress, favorites, settings } = data;
+  const { mode, shortcuts } = settings;
+
+  const selectedWeapon =
+    view.name === "weapon" ? catalog.weapons.find((weapon) => weapon.id === view.weaponId) : null;
   const overall = getOverallCompletion(progress, mode, catalog.weapons);
   const overallPercent =
     overall.total === 0 ? 0 : Math.round((overall.completed / overall.total) * 100);
-  const errorMessage = overlayError ?? saveError;
+  const errorMessage = overlay.overlayError
+    ? formatOverlayError(t, overlay.overlayError)
+    : tracker.saveError && t.saveFailed(tracker.saveError);
+  const openWeapon = (weaponId: string) => setView({ name: "weapon", weaponId });
+  const goHome = () => setView({ name: "home" });
 
   const favoritesPanel = (
     <FavoritesPanel
       favorites={favorites}
       progress={progress}
-      onCountChange={changeCamoCount}
-      onToggleFavorite={toggleFavoriteKey}
-      onOpenWeapon={setSelectedWeaponId}
+      onCountChange={tracker.changeCamoCount}
+      onToggleFavorite={tracker.toggleFavoriteKey}
+      onOpenWeapon={openWeapon}
     />
   );
 
   // 点击穿透时无法操作界面，只保留收藏挑战的精简视图
-  if (isClickThrough) {
+  if (overlay.isClickThrough) {
     return (
       <main className="overlay is-compact">
         {favoritesPanel}
-        <p className="hint">{copy.clickThroughOn}</p>
+        <p className="hint">{t.clickThroughOn(shortcuts.toggleClickThrough)}</p>
       </main>
     );
   }
@@ -74,48 +121,42 @@ function App() {
       <header className="app-header" data-tauri-drag-region>
         <div className="brand" data-tauri-drag-region>
           <span className="brand-mark" aria-hidden />
-          <h1 data-tauri-drag-region>{copy.appTitle}</h1>
-          <span className="tag">{copy.appSubtitle}</span>
+          <h1 data-tauri-drag-region>{t.appTitle}</h1>
+          <span className="tag">{t.appSubtitle}</span>
         </div>
-        {isOverlayAvailable && (
+        <div className="header-actions">
           <button
             type="button"
-            className="text-button"
-            title={copy.hideOverlayHint}
-            onClick={() => void hideOverlay()}
+            className="icon-button"
+            aria-label={t.openSettings}
+            aria-pressed={view.name === "settings"}
+            onClick={() =>
+              setView(view.name === "settings" ? { name: "home" } : { name: "settings" })
+            }
           >
-            {copy.hideOverlay}
+            ⚙
           </button>
-        )}
+          {overlay.isOverlayAvailable && (
+            <button
+              type="button"
+              className="text-button"
+              title={t.hideOverlayHint(shortcuts.toggleOverlay)}
+              onClick={() => void overlay.hideOverlay()}
+            >
+              {t.hideOverlay}
+            </button>
+          )}
+        </div>
       </header>
 
-      <div className="summary" data-tauri-drag-region>
-        <div className="summary-text">
-          <span className="summary-label">{copy.overallLabel}</span>
-          <span className="summary-value">
-            {overallPercent}
-            <small>%</small>
-          </span>
-          <span className="stat">
-            {overall.completed}/{overall.total}
-          </span>
-        </div>
-        <ProgressBar {...overall} label={copy.overallLabel} />
-      </div>
-
-      <div className="segmented" role="tablist" aria-label={copy.modeLabel}>
-        {catalog.modes.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={item.id === mode}
-            onClick={() => setMode(item.id)}
-          >
-            {item.name}
+      {appUpdate.status.state === "available" && view.name !== "settings" && (
+        <div className="banner" role="status">
+          <span>{t.updateBanner(appUpdate.status.version)}</span>
+          <button type="button" className="link" onClick={() => setView({ name: "settings" })}>
+            {t.updateBannerAction}
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
       {errorMessage && (
         <p className="error" role="alert">
@@ -123,34 +164,82 @@ function App() {
         </p>
       )}
 
-      {selectedWeapon ? (
-        <WeaponDetail
-          weapon={selectedWeapon}
-          mode={mode}
-          progress={progress}
-          favorites={favorites}
-          onBack={() => setSelectedWeaponId(null)}
-          onToggleFavorite={toggleFavoriteKey}
-          onCountChange={(camo, count) => changeCamoCount(mode, selectedWeapon, camo, count)}
+      {view.name === "settings" ? (
+        <SettingsPanel
+          settings={settings}
+          onSettingsChange={tracker.updateSettings}
+          isOnlineData={catalogData.isOnlineData}
+          catalogStatus={catalogData.updateStatus}
+          onRefreshCatalog={() => void catalogData.refreshCatalog()}
+          appUpdate={{
+            ...appUpdate,
+            checkForUpdate: () => void appUpdate.checkForUpdate(),
+            installUpdate: () => void appUpdate.installUpdate(),
+          }}
+          onBack={goHome}
         />
       ) : (
         <>
-          {favoritesPanel}
-          <WeaponList
-            catalog={catalog}
-            mode={mode}
-            progress={progress}
-            onSelect={setSelectedWeaponId}
-          />
-          <MasteryPanel
-            mode={mode}
-            progress={progress}
-            onCountChange={(camo, count) => changeMasteryCount(mode, camo, count)}
-          />
+          <div className="summary" data-tauri-drag-region>
+            <div className="summary-text">
+              <span className="summary-label">{t.overallLabel}</span>
+              <span className="summary-value">
+                {overallPercent}
+                <small>%</small>
+              </span>
+              <span className="stat">
+                {overall.completed}/{overall.total}
+              </span>
+            </div>
+            <ProgressBar {...overall} label={t.overallLabel} />
+          </div>
+
+          <div className="segmented" role="tablist" aria-label={t.modeLabel}>
+            {(["mp", "dmz"] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={item === mode}
+                onClick={() => tracker.updateSettings({ mode: item })}
+              >
+                {t.modes[item]}
+              </button>
+            ))}
+          </div>
+
+          {selectedWeapon ? (
+            <WeaponDetail
+              key={selectedWeapon.id}
+              weapon={selectedWeapon}
+              mode={mode}
+              progress={progress}
+              favorites={favorites}
+              onBack={goHome}
+              onToggleFavorite={tracker.toggleFavoriteKey}
+              onCountChange={(camo, count) =>
+                tracker.changeCamoCount(mode, selectedWeapon, camo, count)
+              }
+            />
+          ) : (
+            <>
+              {favoritesPanel}
+              <WeaponList mode={mode} progress={progress} onSelect={openWeapon} />
+              <MasteryPanel
+                mode={mode}
+                progress={progress}
+                onCountChange={(camo, count) => tracker.changeMasteryCount(mode, camo, count)}
+              />
+            </>
+          )}
         </>
       )}
 
-      {isOverlayAvailable && <p className="hint">{copy.shortcutHint}</p>}
+      {overlay.isOverlayAvailable && (
+        <p className="hint">
+          {t.shortcutHint(shortcuts.toggleOverlay, shortcuts.toggleClickThrough)}
+        </p>
+      )}
     </main>
   );
 }

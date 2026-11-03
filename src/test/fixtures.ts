@@ -3,6 +3,7 @@ import type { Camo, Weapon } from "../data/catalog";
 export const levelCamo: Camo = {
   id: "military-camo-1",
   name: "Military Camo 1",
+  nameZh: "军事迷彩 1",
   group: "military",
   image: null,
   challenge: { en: "Reach Weapon Level 10", zh: "武器等级达到 10 级", target: 1 },
@@ -11,6 +12,7 @@ export const levelCamo: Camo = {
 export const countedCamo: Camo = {
   id: "smoke",
   name: "Smoke",
+  nameZh: null,
   group: "special",
   image: null,
   challenge: { en: "Get 75 Kills", zh: "击杀 75 次", target: 75 },
@@ -19,6 +21,7 @@ export const countedCamo: Camo = {
 export const goldCamo: Camo = {
   id: "gold",
   name: "Gold",
+  nameZh: null,
   group: "completionist",
   image: null,
   challenge: { en: "Get 15 Player Kills in a single match", zh: "单场内击杀 15 名玩家", target: 1 },
@@ -27,6 +30,7 @@ export const goldCamo: Camo = {
 export const weapon: Weapon = {
   id: "han-86",
   name: "Han 86",
+  nameZh: "汉86",
   category: "assault-rifle",
   image: null,
   camos: { mp: [goldCamo], dmz: [levelCamo, countedCamo, goldCamo] },

@@ -2,8 +2,9 @@
 
 codmunity 的图片 CDN 拒绝脚本直接下载，需在浏览器中导出：
   1. python3 -I scripts/sync-images.py --list  打印需要的图片清单（JSON）
-  2. 在浏览器打开任一 https://assets.codmunity.gg/optimized/ 图片页，
-     用 scripts/export-images.browser.js 导出 codmunity-mw4-images.json
+  2. 在浏览器打开任一 https://assets.codmunity.gg/optimized/ 图片页，在控制台运行
+     src/lib/exportScript.ts 生成的脚本（客户端设置页「复制导出脚本」可直接复制），
+     导出 codmunity-mw4-images.json
   3. python3 -I scripts/sync-images.py data-source/codmunity-mw4-images.json
 
 数据引用的图片若有缺失会以非零状态退出。

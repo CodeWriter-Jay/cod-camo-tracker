@@ -1,5 +1,5 @@
-import { copy } from "../copy";
-import { catalog, type ModeId, type Trackable } from "../data/catalog";
+import { useCatalog, type ModeId, type Trackable } from "../data/catalog";
+import { useI18n } from "../i18n/I18nContext";
 import {
   ACCOUNT_OWNER_ID,
   getCount,
@@ -17,22 +17,24 @@ interface MasteryPanelProps {
 }
 
 export function MasteryPanel({ mode, progress, onCountChange }: MasteryPanelProps) {
+  const catalog = useCatalog();
+  const { t, camoName } = useI18n();
   const { divergence } = catalog;
   const divergenceCompletion = getDivergenceCompletion(progress, mode, catalog);
-  const requiredCamoName =
-    catalog.weapons
-      .flatMap((weapon) => weapon.camos[mode])
-      .find((camo) => camo.id === divergence.requiredCamoId)?.name ?? divergence.requiredCamoId;
+  const requiredCamo = catalog.weapons
+    .flatMap((weapon) => weapon.camos[mode])
+    .find((camo) => camo.id === divergence.requiredCamoId);
+  const requiredCamoName = requiredCamo ? camoName(requiredCamo) : divergence.requiredCamoId;
 
   return (
-    <section className="panel" aria-label={copy.masteryTitle}>
-      <h2 className="section-title">{copy.masteryTitle}</h2>
+    <section className="panel" aria-label={t.masteryTitle}>
+      <h2 className="section-title">{t.masteryTitle}</h2>
       <div className="divergence">
         <CamoImage file={divergence.image} />
         <div className="camo-info">
           <span className="camo-name">{divergence.name}</span>
           <span className="camo-challenge">
-            {copy.divergenceHint(requiredCamoName, divergence.required)}
+            {t.divergenceHint(requiredCamoName, divergence.required)}
           </span>
           <ProgressBar {...divergenceCompletion} label={divergence.name} />
         </div>

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { copy } from "../copy";
 import type { Trackable } from "../data/catalog";
+import { useI18n } from "../i18n/I18nContext";
 import { getTarget } from "../lib/progress";
 import { CamoImage } from "./CamoImage";
 
@@ -22,6 +22,8 @@ export function CamoRow({
   isFavorite = false,
   onToggleFavorite,
 }: CamoRowProps) {
+  const { t, camoName, challengeText, language } = useI18n();
+  const name = camoName(camo);
   const target = getTarget(camo);
   const isDone = count >= target;
   const className = ["camo-row", isDone && "is-done", isFavorite && "is-favorite"]
@@ -33,9 +35,12 @@ export function CamoRow({
       <CamoImage file={camo.image} />
       <div className="camo-info">
         {eyebrow && <span className="camo-eyebrow">{eyebrow}</span>}
-        <span className="camo-name">{camo.name}</span>
-        <span className="camo-challenge" title={camo.challenge.en}>
-          {camo.challenge.zh}
+        <span className="camo-name">{name}</span>
+        <span
+          className="camo-challenge"
+          title={language === "zh" ? camo.challenge.en : (camo.challenge.zh ?? undefined)}
+        >
+          {challengeText(camo)}
         </span>
       </div>
       {onToggleFavorite && (
@@ -43,7 +48,7 @@ export function CamoRow({
           type="button"
           className="icon-button star"
           aria-pressed={isFavorite}
-          aria-label={isFavorite ? copy.unfavorite(camo.name) : copy.favorite(camo.name)}
+          aria-label={isFavorite ? t.unfavorite(name) : t.favorite(name)}
           onClick={onToggleFavorite}
         >
           {isFavorite ? "★" : "☆"}
@@ -54,7 +59,7 @@ export function CamoRow({
           <input
             type="checkbox"
             checked={isDone}
-            aria-label={copy.doneLabel(camo.name)}
+            aria-label={t.doneLabel(name)}
             onChange={(event) => onCountChange(event.target.checked ? 1 : 0)}
           />
           <span className="check-box" aria-hidden />
@@ -64,7 +69,7 @@ export function CamoRow({
           <button
             type="button"
             className="icon-button"
-            aria-label={copy.decrease(camo.name)}
+            aria-label={t.decrease(name)}
             disabled={count === 0}
             onClick={() => onCountChange(count - 1)}
           >
@@ -76,7 +81,7 @@ export function CamoRow({
               min={0}
               max={target}
               value={count}
-              aria-label={copy.countLabel(camo.name)}
+              aria-label={t.countLabel(name)}
               onChange={(event) => {
                 const value = event.target.valueAsNumber;
                 if (!Number.isNaN(value)) onCountChange(value);
@@ -87,7 +92,7 @@ export function CamoRow({
           <button
             type="button"
             className="icon-button"
-            aria-label={copy.increase(camo.name)}
+            aria-label={t.increase(name)}
             disabled={isDone}
             onClick={() => onCountChange(count + 1)}
           >
@@ -99,7 +104,7 @@ export function CamoRow({
             disabled={isDone}
             onClick={() => onCountChange(target)}
           >
-            {copy.markDone}
+            {t.markDone}
           </button>
         </div>
       )}

@@ -2,7 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import type { Camo, ModeId, Trackable, Weapon } from "../data/catalog";
 import { applyCountChange, toggleFavorite } from "../lib/favorites";
 import { ACCOUNT_OWNER_ID, setCount } from "../lib/progress";
-import { DEFAULT_STATE, loadState, saveState, type PersistedState } from "../lib/storage";
+import {
+  createDefaultState,
+  loadState,
+  saveState,
+  type PersistedState,
+  type Settings,
+} from "../lib/storage";
 
 type LoadStatus =
   | { status: "loading" }
@@ -43,7 +49,7 @@ export function useTrackerState() {
     if (!data) return;
     saveState(data)
       .then(() => setSaveError(null))
-      .catch((error: unknown) => setSaveError(`保存进度失败：${toMessage(error)}`));
+      .catch((error: unknown) => setSaveError(toMessage(error)));
   }, [data]);
 
   const changeCamoCount = useCallback(
@@ -70,15 +76,15 @@ export function useTrackerState() {
     [update],
   );
 
-  const setMode = useCallback(
-    (mode: ModeId) =>
-      update((current) => ({ ...current, settings: { ...current.settings, mode } })),
+  const updateSettings = useCallback(
+    (changes: Partial<Settings>) =>
+      update((current) => ({ ...current, settings: { ...current.settings, ...changes } })),
     [update],
   );
 
   // 本地数据损坏时允许用户清空重来，否则应用无法继续使用
   const resetState = useCallback(() => {
-    setLoadStatus({ status: "ready", data: DEFAULT_STATE });
+    setLoadStatus({ status: "ready", data: createDefaultState() });
   }, []);
 
   return {
@@ -87,7 +93,7 @@ export function useTrackerState() {
     changeCamoCount,
     changeMasteryCount,
     toggleFavoriteKey,
-    setMode,
+    updateSettings,
     resetState,
   };
 }

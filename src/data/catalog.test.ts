@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalog } from "./catalog";
+import { bundledCatalog as catalog } from "./catalog";
 
 describe("catalog", () => {
   it("should have unique weapon ids", () => {
@@ -25,6 +25,8 @@ describe("catalog", () => {
     const challenges = catalog.weapons.flatMap((weapon) =>
       Object.values(weapon.camos).flatMap((camos) => camos.map((camo) => camo.challenge)),
     );
-    expect(challenges.every((challenge) => /[一-龥]/.test(challenge.zh))).toBe(true);
+    expect(
+      challenges.every((challenge) => challenge.zh !== null && /[一-龥]/.test(challenge.zh)),
+    ).toBe(true);
   });
 });
