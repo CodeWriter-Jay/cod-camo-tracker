@@ -14,11 +14,14 @@
 
 </div>
 
-![Home](docs/screenshots/home-en.jpg)
+![The overlay in game](docs/screenshots/overlay-en.jpg)
+
+<p align="center"><sub>The overlay sits on top of the game as a translucent, always-on-top window, with adjustable background opacity and size</sub></p>
 
 ## Features
 
 - **In-game overlay**: a transparent, always-on-top window. `Alt+C` shows or hides it and `Alt+X` toggles click-through, so you never have to leave the game to check progress
+- **Adjustable look**: set background opacity from 30% to 100%; drag the bottom-right corner to resize, and size and position are remembered
 - **Favorite challenges**: pin the camos you're grinding to the home screen; once checked off, each is replaced by that weapon's next camo
 - **Mode-aware requirements**: Multiplayer and DMZ share completion, and switching modes shows each mode's own challenge
 - **Prerequisite auto-check**: checking a military camo fills in the earlier military camos; checking Gold (or any completionist camo) fills in every earlier camo on that weapon
@@ -27,6 +30,8 @@
 - **Online data updates**: when new weapons drop, pull the latest weapons and camos from codmunity in one click
 - **Auto-update**: check for a new version in Settings and install it in place
 
+![Home](docs/screenshots/home-en.jpg)
+
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/detail-en.jpg" alt="Weapon details" /></td>
@@ -34,7 +39,7 @@
   </tr>
   <tr>
     <td align="center">Weapon details: Military / Special / Completionist groups, ☆ to favorite, check when done</td>
-    <td align="center">Settings: language, shortcuts, data update, image import, app updates</td>
+    <td align="center">Settings: language, appearance, shortcuts, data update, image import, app updates</td>
   </tr>
 </table>
 
@@ -53,8 +58,9 @@
 | `Alt+X` | Toggle click-through: mouse input goes to the game and the overlay shows only your favorite challenges |
 | ☆ | Favorite a camo in weapon details; favorites appear at the top of the home screen |
 | Checkbox | Mark a camo as done; unchecking only affects that camo |
+| Bottom-right corner | Drag to resize the overlay; drag the title bar to move it |
 
-- Shortcuts can be re-recorded in Settings
+- Shortcuts and background opacity can be changed in Settings
 - Run the game in **borderless windowed** or windowed mode; the overlay can't draw over exclusive fullscreen
 - The tracker is just a separate always-on-top window. It **does not inject into the game or read game memory**
 
@@ -74,7 +80,7 @@ Stack: Tauri 2 · React 19 · TypeScript · Vite · zod · Vitest. The Windows i
 Push a version tag and GitHub Actions builds the Windows installer and publishes it to Releases:
 
 ```bash
-git tag v0.2.1 && git push origin v0.2.1
+git tag v1.0.0 && git push origin v1.0.0
 ```
 
 Bump the version in `package.json`, `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml` first.
