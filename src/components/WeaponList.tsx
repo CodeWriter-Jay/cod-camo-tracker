@@ -1,32 +1,39 @@
-import { useState } from "react";
 import { useCatalog } from "../data/catalog";
 import { useI18n } from "../i18n/I18nContext";
 import { getWeaponCompletion, type Completed } from "../lib/progress";
+import {
+  EMPTY_WEAPON_FILTER,
+  filterWeapons,
+  getFilterableCamos,
+  isFilterActive,
+  type WeaponFilter,
+} from "../lib/weaponFilter";
 import { CamoImage } from "./CamoImage";
 import { ProgressBar } from "./ProgressBar";
 
-const ALL_CATEGORIES = "all";
+const ANY_CAMO = "";
 
 interface WeaponListProps {
   completed: Completed;
+  /** 筛选条件由父组件持有，进出武器详情时保留 */
+  filter: WeaponFilter;
+  onFilterChange: (filter: WeaponFilter) => void;
   onSelect: (weaponId: string) => void;
 }
 
-export function WeaponList({ completed, onSelect }: WeaponListProps) {
+export function WeaponList({ completed, filter, onFilterChange, onSelect }: WeaponListProps) {
   const catalog = useCatalog();
-  const { t, weaponName, categoryName } = useI18n();
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState(ALL_CATEGORIES);
+  const { t, weaponName, categoryName, camoName } = useI18n();
+  const weapons = filterWeapons(catalog.weapons, filter, completed);
+  const filterableCamos = getFilterableCamos(catalog.weapons);
 
-  const normalizedQuery = query.trim().toLowerCase();
-  // 中英文名都可搜索
-  const weapons = catalog.weapons.filter(
-    (weapon) =>
-      (category === ALL_CATEGORIES || weapon.category === category) &&
-      [weapon.name, weapon.nameZh ?? ""].some((name) =>
-        name.toLowerCase().includes(normalizedQuery),
-      ),
-  );
+  const toggleCategory = (categoryId: string) =>
+    onFilterChange({
+      ...filter,
+      categories: filter.categories.includes(categoryId)
+        ? filter.categories.filter((item) => item !== categoryId)
+        : [...filter.categories, categoryId],
+    });
 
   return (
     <section className="panel">
@@ -34,23 +41,54 @@ export function WeaponList({ completed, onSelect }: WeaponListProps) {
       <div className="filters">
         <input
           type="search"
-          value={query}
+          value={filter.query}
           placeholder={t.searchPlaceholder}
           aria-label={t.searchLabel}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => onFilterChange({ ...filter, query: event.target.value })}
         />
         <select
-          value={category}
-          aria-label={t.categoryLabel}
-          onChange={(event) => setCategory(event.target.value)}
+          value={filter.unfinishedCamoId ?? ANY_CAMO}
+          aria-label={t.camoFilterLabel}
+          onChange={(event) =>
+            onFilterChange({ ...filter, unfinishedCamoId: event.target.value || null })
+          }
         >
-          <option value={ALL_CATEGORIES}>{t.allCategories}</option>
-          {catalog.categories.map((item) => (
-            <option key={item.id} value={item.id}>
-              {categoryName(item)}
+          <option value={ANY_CAMO}>{t.anyCamoProgress}</option>
+          {filterableCamos.map((camo) => (
+            <option key={camo.id} value={camo.id}>
+              {t.unfinishedCamo(camoName(camo))}
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          className="text-button"
+          disabled={!isFilterActive(filter)}
+          onClick={() => onFilterChange(EMPTY_WEAPON_FILTER)}
+        >
+          {t.clearFilters}
+        </button>
+      </div>
+      <div className="category-chips" role="group" aria-label={t.categoryLabel}>
+        <button
+          type="button"
+          className="chip"
+          aria-pressed={filter.categories.length === 0}
+          onClick={() => onFilterChange({ ...filter, categories: [] })}
+        >
+          {t.allCategories}
+        </button>
+        {catalog.categories.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className="chip"
+            aria-pressed={filter.categories.includes(item.id)}
+            onClick={() => toggleCategory(item.id)}
+          >
+            {categoryName(item)}
+          </button>
+        ))}
       </div>
       {weapons.length === 0 ? (
         <p className="empty">{t.noWeapons}</p>

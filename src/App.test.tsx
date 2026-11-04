@@ -88,6 +88,37 @@ describe("App", () => {
     expect(screen.getByText("没有匹配的武器")).toBeInTheDocument();
   });
 
+  it("should keep weapon filters after returning from weapon detail and clear them at once", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const categories = await screen.findByRole("group", { name: "武器类别" });
+    await user.click(within(categories).getByRole("button", { name: "突击步枪" }));
+    await user.click(within(categories).getByRole("button", { name: "冲锋枪" }));
+    await user.selectOptions(screen.getByLabelText("按迷彩筛选未完成武器"), "gold");
+
+    expect(screen.getByRole("button", { name: /ISO夜影\s*\d+\/\d+/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /ISO夜影\s*\d+\/\d+/ }));
+    await user.click(screen.getByLabelText("Gold 已完成"));
+    await user.click(screen.getByRole("button", { name: /返回/ }));
+
+    // 返回后列表重新挂载，需重新查询
+    const categoriesAfterBack = screen.getByRole("group", { name: "武器类别" });
+    expect(within(categoriesAfterBack).getByRole("button", { name: "冲锋枪" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByLabelText("按迷彩筛选未完成武器")).toHaveValue("gold");
+    // 已完成黄金的武器不再出现在“未完成 Gold”结果中
+    expect(screen.queryByRole("button", { name: /ISO夜影\s*\d+\/\d+/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /玄铁/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "清除筛选" }));
+    expect(screen.getByRole("button", { name: "全部类别", pressed: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ISO夜影\s*\d+\/\d+/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "清除筛选" })).toBeDisabled();
+  });
+
   it("should switch interface to english in settings", async () => {
     const user = userEvent.setup();
     render(<App />);

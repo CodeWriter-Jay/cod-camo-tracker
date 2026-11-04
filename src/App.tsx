@@ -18,6 +18,7 @@ import { useOverlayWindow } from "./hooks/useOverlayWindow";
 import { LanguageContext, useI18n } from "./i18n/I18nContext";
 import { messages, type Messages } from "./i18n/messages";
 import { getOverallCompletion } from "./lib/progress";
+import { EMPTY_WEAPON_FILTER, type WeaponFilter } from "./lib/weaponFilter";
 import { buildOverlayState } from "./overlay/protocol";
 import { DEFAULT_SHORTCUTS, type PersistedState } from "./lib/storage";
 
@@ -114,6 +115,8 @@ function TrackerView({
 }: TrackerViewProps) {
   const { t } = useI18n();
   const [view, setView] = useState<View>({ name: "home" });
+  // 放在视图之上，进入武器详情或设置后返回时筛选条件不丢失
+  const [weaponFilter, setWeaponFilter] = useState<WeaponFilter>(EMPTY_WEAPON_FILTER);
   const { catalog } = catalogData;
   const { completed, favorites, settings } = data;
   const { mode, shortcuts } = settings;
@@ -227,7 +230,12 @@ function TrackerView({
                 onToggleFavorite={tracker.toggleFavoriteKey}
                 onOpenWeapon={openWeapon}
               />
-              <WeaponList completed={completed} onSelect={openWeapon} />
+              <WeaponList
+                completed={completed}
+                filter={weaponFilter}
+                onFilterChange={setWeaponFilter}
+                onSelect={openWeapon}
+              />
               <MasteryPanel
                 mode={mode}
                 completed={completed}
