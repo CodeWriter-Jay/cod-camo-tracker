@@ -98,9 +98,18 @@ h3 {
 /* ---------- 头部与总进度 ---------- */
 
 .app-header {
+  /* 吸顶：抵消 .overlay 的上/左右内边距，铺满宽度并用不透明底色遮住滚动内容 */
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin: -14px -14px 0;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 10px 10px 0 0;
+  background: rgb(9, 11, 10);
   cursor: move;
 }
 
