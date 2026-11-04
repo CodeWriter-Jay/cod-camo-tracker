@@ -88,7 +88,7 @@ pnpm test && pnpm lint && pnpm typecheck
 推送版本标签即可由 GitHub Actions 构建 Windows 安装包并发布到 Releases：
 
 ```bash
-git tag v1.1.0 && git push origin v1.1.0
+git tag v1.2.0 && git push origin v1.2.0
 ```
 
 发版前先同步修改 `package.json`、`src-tauri/tauri.conf.json` 与 `src-tauri/Cargo.toml` 中的版本号。
